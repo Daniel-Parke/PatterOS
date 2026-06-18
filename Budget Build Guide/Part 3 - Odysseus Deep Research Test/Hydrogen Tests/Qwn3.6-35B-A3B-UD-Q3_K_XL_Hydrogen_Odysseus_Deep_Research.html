@@ -1,0 +1,1020 @@
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Garage Hydrogen Challenge: Balancing Efficiency with Feasibility</title>
+<meta name="description" content="Executive Summary
+
+For the garage-based builder seeking to construct a complete, closed-loop solar-to-hydrogen system using off-the-shelf components, the optim">
+<meta property="og:title" content="The Garage Hydrogen Challenge: Balancing Efficiency with Feasibility">
+<meta property="og:description" content="Executive Summary
+
+For the garage-based builder seeking to construct a complete, closed-loop solar-to-hydrogen system using off-the-shelf components, the optim">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://cdn.prod.website-files.com/678da5af77a977f55044d1c9/688217690662be31d00219f4_67bd250532ea42885e56ce1b_Demo-Masked.avif">
+<meta name="theme-color" content="#b8543a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131214" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='75' font-size='75'&gt;O&lt;/text&gt;&lt;/svg&gt;">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --bg: #fbf9f4;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1ede4;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1817;
+  --text-dim: #5a5651;
+  --text-muted: #8a8580;
+  --accent: #b8543a;
+  --accent-light: #d97a5e;
+  --accent-bg: rgba(184,84,58,0.06);
+  --gold: #c9952e;
+  --gold-bg: rgba(201,149,46,0.09);
+  --aurora-a: rgba(184,84,58,0.10);
+  --aurora-b: rgba(201,149,46,0.08);
+  --aurora-c: rgba(64,98,128,0.07);
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+  --max-w: 760px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131214; --bg-surface: #1c1a1e; --bg-surface-alt: #25232a;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.16);
+    --text: #ece8e2; --text-dim: #a8a39c; --text-muted: #6f6b66;
+    --accent: #e88f73; --accent-light: #f4ad95; --accent-bg: rgba(232,143,115,0.09);
+    --gold: #e8c05a; --gold-bg: rgba(232,192,90,0.09);
+    --aurora-a: rgba(232,143,115,0.13);
+    --aurora-b: rgba(232,192,90,0.09);
+    --aurora-c: rgba(125,180,224,0.10);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 28px rgba(0,0,0,0.55);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Give smooth-scroll some breathing room so anchors land below the
+     fixed toolbar instead of being shoved straight under it. */
+  scroll-padding-top: 4rem;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Aurora background ─────────────────────────────────
+   Slowly-drifting layered blobs in the accent palette. Sits behind
+   the content, fixed to the viewport so scrolling doesn't reset the
+   composition. Subtle grain on top stops it reading as 'flat CSS'. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -20vw;
+  z-index: -2;
+  background:
+    radial-gradient(40vw 50vh at 18% 22%, var(--aurora-a) 0%, transparent 60%),
+    radial-gradient(45vw 55vh at 82% 12%, var(--aurora-b) 0%, transparent 65%),
+    radial-gradient(55vw 60vh at 50% 88%, var(--aurora-c) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Subtle film-grain — SVG turbulence baked to a data-URL. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,0,0) scale(1);     }
+  50%  { transform: translate3d(2vw,-1vh,0) scale(1.04); }
+  100% { transform: translate3d(-1vw,1.5vh,0) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* ── Toolbar (top-right) ──────────────────────────── */
+.toolbar {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.toolbar:hover { opacity: 1; }
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s;
+  position: relative;
+}
+.toolbar button:hover { background: var(--bg-surface-alt); }
+.toolbar button svg { width: 14px; height: 14px; flex-shrink: 0; }
+.toolbar .toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--text);
+  color: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.toolbar .toast.show { opacity: 1; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-width: 140px;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu button:hover { background: var(--bg-surface-alt); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: transparent;
+  color: var(--text);
+  padding: 5.5rem 2rem 2.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* A hair-thin gradient hairline divider under the hero to anchor it
+   without putting it on a heavy boxed background. */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: min(60%, 320px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.hero-label {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-body);
+}
+.hero h1 {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 120, 'SOFT' 50;
+  line-height: 1.15;
+  max-width: 720px;
+  margin: 0 auto;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Hero image ───────────────────────────────────── */
+.hero-image {
+  max-width: var(--max-w);
+  margin: -2rem auto 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 2rem;
+}
+.hero-image img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  display: block;
+}
+
+/* ── Section images ───────────────────────────────── */
+.section-image {
+  margin: 1.5rem 0;
+  position: relative;
+}
+.section-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ── Per-image hide button ────────────────────────────
+   A small X that appears on hover (or always on touch) so users can
+   remove irrelevant OG images. Click POSTs the URL to the backend so
+   the next render skips it. */
+.img-hide-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-hide-btn { top: 14px; right: 2.5rem; }
+/* Reroll sits just to the left of the hide button. */
+.img-reroll-btn {
+  position: absolute;
+  top: 10px; right: 46px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-reroll-btn { top: 14px; right: calc(2.5rem + 36px); }
+.section-image:hover .img-hide-btn,
+.section-image:hover .img-reroll-btn,
+.hero-image:hover .img-hide-btn,
+.hero-image:hover .img-reroll-btn { opacity: 1; }
+.img-hide-btn:hover { background: var(--accent); }
+.img-reroll-btn:hover { background: var(--accent); }
+.img-hide-btn:active,
+.img-reroll-btn:active { transform: scale(0.92); }
+.img-reroll-btn.spinning svg { animation: img-reroll-spin 0.6s linear infinite; }
+.img-reroll-btn:disabled { display: none; }
+@keyframes img-reroll-spin { to { transform: rotate(360deg); } }
+@media (hover: none) {
+  /* Touch devices have no hover — show the buttons at low opacity always. */
+  .img-hide-btn, .img-reroll-btn { opacity: 0.7; }
+}
+.section-image.fading,
+.hero-image.fading {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* ── Stats bar ─────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.stat { display: flex; align-items: center; gap: 0.35rem; }
+.stat-value { font-weight: 600; color: var(--text); }
+
+/* ── Layout ────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: calc(var(--max-w) + 260px);
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+}
+
+/* ── TOC sidebar ───────────────────────────────────── */
+.toc-sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 3.2rem 0.8rem 2rem 1.4rem;
+  border-right: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.toc-sidebar nav { position: relative; }
+.toc-sidebar nav a {
+  position: relative;
+  display: block;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 0.42rem 0.7rem 0.42rem 0.85rem;
+  margin: 1px 0;
+  border-radius: 6px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  transition: color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+/* Sliding accent indicator on the left edge of each TOC link */
+.toc-sidebar nav a::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2px; height: 0;
+  background: var(--accent);
+  transform: translateY(-50%);
+  border-radius: 1px;
+  transition: height 0.18s ease, opacity 0.18s ease;
+  opacity: 0;
+}
+.toc-sidebar nav a:hover {
+  color: var(--text);
+  background: var(--accent-bg);
+  padding-left: 1rem;
+}
+.toc-sidebar nav a:hover::before {
+  height: 60%;
+  opacity: 1;
+}
+.toc-sidebar nav a.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-bg);
+}
+.toc-sidebar nav a.active::before {
+  height: 80%;
+  opacity: 1;
+}
+.toc-sidebar nav a.depth-3 {
+  padding-left: 1.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.toc-sidebar nav a.depth-3:hover { padding-left: 1.45rem; }
+
+/* ── Content ───────────────────────────────────────── */
+.content { max-width: var(--max-w); padding: 3rem 2.5rem 4rem; }
+
+/* Display headings — Fraunces optical-size driven so they get more
+   contrast and personality at the larger end. */
+.content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent) 0%, transparent 65%) 1;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text);
+}
+.content h2:first-child { margin-top: 0; }
+.content h3 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 32;
+  margin: 2.2rem 0 0.6rem;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.content h4 {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin: 1.6rem 0 0.5rem;
+}
+.content p { margin-bottom: 1.1rem; hanging-punctuation: first last; }
+
+/* Drop cap on the very first paragraph of the body — old-school editorial
+   touch that anchors the reader. */
+.content > p:first-of-type::first-letter,
+.content > h2:first-child + p::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+  font-size: 3.6em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.15em 0.12em 0 -0.04em;
+  color: var(--accent);
+}
+
+.content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+.content a:hover {
+  text-decoration-color: var(--accent);
+  color: var(--accent-light);
+}
+.content ul, .content ol { margin: 0 0 1.1rem 1.6rem; }
+.content li { margin-bottom: 0.4rem; }
+.content li::marker { color: var(--accent); }
+.content li > ul, .content li > ol { margin-top: 0.4rem; margin-bottom: 0; }
+.content blockquote {
+  position: relative;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-bg);
+  padding: 1.1rem 1.4rem 1.1rem 2.6rem;
+  margin: 1.5rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.content blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.5rem; top: 0.3rem;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-style: normal;
+  color: var(--gold);
+  opacity: 0.5;
+  line-height: 1;
+}
+.content hr { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 2rem 0; }
+.content code { font-family: var(--font-mono); font-size: 0.86em; background: var(--bg-surface-alt); padding: 0.15em 0.4em; border-radius: 4px; }
+.content pre { background: var(--bg-surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.25rem 0; font-size: 0.86rem; line-height: 1.6; }
+.content pre code { background: none; padding: 0; }
+.content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.9rem; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.content th { text-align: left; padding: 0.7rem 1rem; background: var(--accent-bg); font-weight: 600; border-bottom: 2px solid var(--border-strong); }
+.content td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.content tr:last-child td { border-bottom: none; }
+.content tr:hover td { background: var(--accent-bg); }
+
+/* ── Sources (collapsible list) ───────────────────── */
+.sources-panel { margin-top: 3rem; border-top: 2px solid var(--border); padding-top: 1.5rem; }
+.sources-panel details { margin: 0; }
+.sources-panel summary {
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; font-size: 1rem; font-weight: 600;
+  color: var(--text); padding: 0.5rem 0; list-style: none;
+  user-select: none;
+}
+.sources-panel summary::-webkit-details-marker { display: none; }
+.sources-panel summary::before {
+  content: '\25B6'; font-size: 0.65em; color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.sources-panel details[open] summary::before { transform: rotate(90deg); }
+.sources-list { padding: 0.5rem 0 0 0.25rem; }
+.sources-list a {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.35rem 0; font-size: 0.85rem;
+  color: var(--text); text-decoration: none;
+  transition: color 0.15s;
+}
+.sources-list a:hover { color: var(--accent); }
+.sources-list .snum {
+  color: var(--text-muted); font-size: 0.75rem;
+  min-width: 1.5rem; text-align: right; flex-shrink: 0;
+}
+.sources-list .sdomain {
+  color: var(--text-muted); font-size: 0.75rem;
+  margin-left: auto; flex-shrink: 0;
+}
+
+/* ── Chat-about CTA ────────────────────────────────── */
+.chat-cta {
+  margin: 3rem 0 1rem; padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface);
+}
+.chat-cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; font-size: 0.95rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.15s, transform 0.05s;
+}
+.chat-cta-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.chat-cta-btn:active:not(:disabled) { transform: translateY(1px); }
+.chat-cta-btn:disabled { opacity: 0.6; cursor: progress; }
+.chat-cta-hint {
+  margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.report-footer {
+  text-align: center; padding: 2rem; font-size: 0.75rem;
+  color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 2rem;
+}
+
+/* ── Animations ────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .content h2, .content h3, .content p, .content ul, .content ol,
+  .content blockquote, .content table, .content pre, .section-image {
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ── Print ─────────────────────────────────────────── */
+@media print {
+  .toc-sidebar, .toolbar { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+</style>
+</head>
+<body class="">
+
+<!-- Toolbar: Export + Restore hidden images -->
+<div class="toolbar">
+  
+  <div class="dropdown">
+    <button id="btn-export" title="Export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export ▾
+    </button>
+    <div class="dropdown-menu" id="export-menu">
+      <button id="btn-pdf">Save as PDF</button>
+      <button id="btn-html">Download HTML</button>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-label">Odysseus — Deep Research Report</div>
+  <h1>The Garage Hydrogen Challenge: Balancing Efficiency with Feasibility</h1>
+</div>
+
+<div class="hero-image" data-img-url="https://cdn.prod.website-files.com/678da5af77a977f55044d1c9/688217690662be31d00219f4_67bd250532ea42885e56ce1b_Demo-Masked.avif"><img src="https://cdn.prod.website-files.com/678da5af77a977f55044d1c9/688217690662be31d00219f4_67bd250532ea42885e56ce1b_Demo-Masked.avif" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-value">233.5s</span> Duration</div>
+  <div class="stat"><span class="stat-value">3</span> Rounds</div>
+  <div class="stat"><span class="stat-value">10</span> Queries</div>
+  <div class="stat"><span class="stat-value">10</span> URLs Analyzed</div>
+  <div class="stat"><span class="stat-value">Qwen3.6-35B-A3B-UD-Q3_K_XL</span> Model</div>
+  <div class="stat"><span class="stat-value">duckduckgo</span> Search</div>
+</div>
+
+<div class="layout">
+  <aside class="toc-sidebar">
+    <nav>
+      <a href="#executive-summary" class="depth-2">Executive Summary</a>
+      <a href="#electrolysis-technology-balancing-efficiency-with-feasibility" class="depth-2">Electrolysis Technology: Balancing Efficiency with Feasibility</a>
+      <a href="#alkaline-electrolysis-the-pragmatic-choice" class="depth-3">Alkaline Electrolysis: The Pragmatic Choice</a>
+      <a href="#pem-electrolysis-high-efficiency-high-complexity" class="depth-3">PEM Electrolysis: High Efficiency, High Complexity</a>
+      <a href="#emerging-and-excluded-technologies" class="depth-3">Emerging and Excluded Technologies</a>
+      <a href="#solar-integration-and-power-management-the-bridge-to-stability" class="depth-2">Solar Integration and Power Management: The Bridge to Stability</a>
+      <a href="#the-necessity-of-battery-buffering" class="depth-3">The Necessity of Battery Buffering</a>
+      <a href="#mppt-and-power-conditioning" class="depth-3">MPPT and Power Conditioning</a>
+      <a href="#system-architecture-and-component-sourcing" class="depth-2">System Architecture and Component Sourcing</a>
+      <a href="#solar-generation-and-electrical-storage" class="depth-3">Solar Generation and Electrical Storage</a>
+      <a href="#electrolyzer-and-hydrogen-production" class="depth-3">Electrolyzer and Hydrogen Production</a>
+      <a href="#hydrogen-storage" class="depth-3">Hydrogen Storage</a>
+      <a href="#fuel-cell-and-power-recovery" class="depth-3">Fuel Cell and Power Recovery</a>
+      <a href="#water-management-and-closed-loop" class="depth-3">Water Management and Closed Loop</a>
+      <a href="#safety-and-monitoring" class="depth-3">Safety and Monitoring</a>
+      <a href="#efficiency-analysis-and-performance-optimization" class="depth-2">Efficiency Analysis and Performance Optimization</a>
+      <a href="#breakdown-of-losses" class="depth-3">Breakdown of Losses</a>
+      <a href="#optimization-strategies" class="depth-3">Optimization Strategies</a>
+      <a href="#safety-regulation-and-the-garage-reality" class="depth-2">Safety, Regulation, and the Garage Reality</a>
+      <a href="#pressure-vessels-and-chemical-safety" class="depth-3">Pressure Vessels and Chemical Safety</a>
+      <a href="#regulatory-considerations" class="depth-3">Regulatory Considerations</a>
+      <a href="#conclusion-the-verdict-for-the-garage-builder" class="depth-2">Conclusion: The Verdict for the Garage Builder</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <h2 id="executive-summary">Executive Summary</h2>
+<p>For the garage-based builder seeking to construct a complete, closed-loop solar-to-hydrogen system using off-the-shelf components, the optimal strategy prioritizes <strong>alkaline electrolysis</strong> coupled with a <strong>battery-buffered power architecture</strong>. While Proton Exchange Membrane (PEM) technology offers superior efficiency and dynamic response to solar variability, it is largely impractical for garage implementation due to the prohibitive cost of precious metal catalysts, strict requirements for deionized water, and the complexity of sourcing functional surplus stacks. Alkaline electrolysis, conversely, utilizes robust, non-precious materials like nickel and potassium hydroxide (KOH), making it highly amenable to DIY construction or the use of small commercial units.</p>
+<p>A critical finding of this research is that direct solar coupling is inefficient and potentially damaging to electrolyzer components. The most efficient method involves a DC bus architecture where solar energy charges a Lithium Iron Phosphate (LiFePO4) battery bank via a Maximum Power Point Tracking (MPPT) controller. This buffer decouples intermittent solar generation from electrolyzer operation, allowing the system to run at a constant, optimal load, thereby maximizing hydrogen yield and extending component life. The complete system achieves a round-trip efficiency of approximately 20–30%, a realistic figure for current garage-scale technologies. Safety remains the paramount concern; the system requires certified pressure vessels, continuous hydrogen leak detection, and robust ventilation. By adhering to these parameters, builders can create a functional, safe, and educational closed-loop energy storage system.</p>
+<p>The dream of a self-sustaining energy loop—where excess solar energy is converted into hydrogen gas, stored, and later reconverted to electricity via a fuel cell—is a compelling goal for the advanced garage builder. However, the transition from theoretical efficiency to a practical, buildable system requires navigating significant engineering trade-offs. The core challenge lies in selecting technologies that offer high performance without demanding industrial-grade infrastructure, exotic materials, or safety protocols that exceed the scope of a residential workspace.</p>
+<p>Research indicates a clear divergence between what is technically optimal and what is practically viable for a garage environment. Technologies like Solid Oxide Electrolysis (SOEC) can achieve high efficiencies but operate at temperatures between 700°C and 850°C, requiring thermal management infrastructure that is entirely unsuitable for a garage build [2], [4]. Similarly, while Anion Exchange Membrane (AEM) technology promises the material benefits of alkaline systems with the performance of PEM, the supply chain for AEM membranes and catalysts remains immature, making it impossible to source reliable off-the-shelf components for DIY implementation [1], [5]. Consequently, the builder must focus on mature technologies where components are accessible, and the risks are manageable.</p>
+<p>The consensus across multiple technical analyses is that <strong>alkaline electrolysis</strong> represents the "sweet spot" for garage-scale hydrogen production. It offers a balance of efficiency, cost, and safety that aligns with the constraints of a home workshop. While PEM electrolyzers are often touted for their efficiency and solar compatibility, the garage builder must weigh these benefits against the reality of sourcing surplus stacks, managing water purity, and handling high costs. This report synthesizes evidence to provide a comprehensive roadmap for building a system that is not only efficient but also buildable, safe, and sustainable.</p>
+<h2 id="electrolysis-technology-balancing-efficiency-with-feasibility">Electrolysis Technology: Balancing Efficiency with Feasibility</h2>
+<figure class="section-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs43937-024-00036-6/MediaObjects/43937_2024_36_Fig1_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs43937-024-00036-6/MediaObjects/43937_2024_36_Fig1_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The electrolyzer is the heart of the solar-to-hydrogen conversion process, and its selection dictates the system's efficiency, complexity, and cost. A comparative analysis of available technologies reveals distinct trade-offs that must be carefully evaluated for a garage build.</p>
+<h3 id="alkaline-electrolysis-the-pragmatic-choice">Alkaline Electrolysis: The Pragmatic Choice</h3>
+<p>Alkaline electrolysis is widely regarded as the most viable option for garage implementation. These systems utilize non-precious metal catalysts, typically nickel or stainless steel, and an aqueous electrolyte such as potassium hydroxide (KOH). These materials are commercially abundant, inexpensive, and safe to handle with appropriate personal protective equipment [3], [4]. Alkaline electrolyzers generally achieve efficiencies in the range of 60–70% based on the Lower Heating Value (LHV) of hydrogen [3], [4]. While this is lower than the best PEM systems, it is more than sufficient for a garage-scale loop, especially when considering the ease of construction and maintenance.</p>
+<p>A significant advantage of alkaline technology is its tolerance for impure water. Unlike PEM systems, alkaline cells do not require deionized water, reducing the maintenance burden for the builder. Furthermore, alkaline electrolyzers are robust and can be constructed using off-the-shelf components. Garage-scale DIY alkaline cells can be built using PVC piping, nickel mesh electrodes, and ion-exchange separators, or builders can purchase small commercial alkaline units designed for hobbyist use [3]. This flexibility makes alkaline the primary recommendation for this application.</p>
+<h3 id="pem-electrolysis-high-efficiency-high-complexity">PEM Electrolysis: High Efficiency, High Complexity</h3>
+<p>Proton Exchange Membrane (PEM) electrolyzers offer compelling performance characteristics that make them theoretically ideal for solar applications. PEM systems can achieve efficiencies up to 80% LHV and excel in dynamic response, allowing them to handle rapid power fluctuations common in solar generation more effectively than traditional alkaline systems [1], [5]. This makes PEM attractive for direct solar coupling, where power output varies with cloud cover and time of day.</p>
+<p>However, the barriers to garage implementation are substantial. PEM stacks require precious metal catalysts, such as platinum and iridium, which drive up costs significantly. More critically, PEM systems demand high-purity deionized water to prevent membrane degradation, necessitating a water treatment system that adds complexity and cost [2], [7]. Sourcing functional PEM stacks off-the-shelf is challenging; while surplus stacks from fuel cell vehicles or industrial units can be found, they require precise water management, humidification, and high-quality power conditioning to avoid rapid degradation [2], [7]. For builders with higher budgets who can manage these complexities, surplus PEM stacks offer a viable secondary option, but they are less forgiving than alkaline systems in a garage environment [7].</p>
+<h3 id="emerging-and-excluded-technologies">Emerging and Excluded Technologies</h3>
+<p>Anion Exchange Membrane (AEM) technology combines the material advantages of alkaline systems with the performance of PEM, offering potential for superior solar coupling and cost-effectiveness [1], [5]. However, sources consistently note that AEM membranes and catalysts are not yet standardized in the off-the-shelf market. Commercial AEM stacks are not widely available for small-scale implementation, rendering this technology excluded from current garage-build recommendations [5], [7].</p>
+<p>Solid Oxide Electrolysis (SOEC) is similarly excluded due to its operational requirements. SOEC systems operate at extremely high temperatures (700–850°C), requiring significant thermal management and safety infrastructure that poses unacceptable risks for a garage setting [2], [4].</p>
+<p><strong>Synthesis:</strong> The evidence strongly supports alkaline electrolysis as the foundation for a garage build. While PEM offers higher efficiency and better solar dynamics, the practical barriers of cost, water purity, and component sourcing make it a niche option. AEM and SOEC are currently impractical for DIY implementation.</p>
+<h2 id="solar-integration-and-power-management-the-bridge-to-stability">Solar Integration and Power Management: The Bridge to Stability</h2>
+<p>One of the most critical insights from this research is that <strong>direct coupling</strong> of solar panels to an electrolyzer is neither efficient nor advisable. Solar output follows a distinct curve that rarely matches the operating window of an electrolyzer, and fluctuations due to cloud cover can cause thermal cycling and efficiency drops. A closed-loop system requires intelligent power management to maximize efficiency and ensure safety.</p>
+<h3 id="the-necessity-of-battery-buffering">The Necessity of Battery Buffering</h3>
+<p>The most efficient method for integrating solar energy into a hydrogen system is a <strong>DC bus architecture with a battery buffer</strong>. In this configuration, solar panels charge a battery bank via an MPPT controller, and the electrolyzer draws power from the battery. This buffering strategy decouples the intermittent solar generation from the electrolyzer operation, allowing the electrolyzer to run at a constant, optimal load regardless of solar variability [5], [6].</p>
+<p>Analysis indicates that power-matching strategies significantly impact the levelized cost of hydrogen, even in small-scale systems [6]. By using a battery buffer, the system avoids the inefficiencies associated with ramping the electrolyzer up and down. It also protects the electrolyzer from voltage spikes and transient loads that can degrade components over time. For a garage build, a Lithium Iron Phosphate (LiFePO4) battery bank is recommended due to its stable DC output, deep cycle capability, and inherent safety profile compared to other lithium chemistries.</p>
+<h3 id="mppt-and-power-conditioning">MPPT and Power Conditioning</h3>
+<p>High-efficiency MPPT controllers are essential to harvest maximum energy from the solar array. These controllers ensure that the panels operate at their maximum power point, optimizing energy harvest throughout the day. If a PEM electrolyzer is used, additional DC-DC converters may be required to regulate voltage and current precisely, as PEM stacks are sensitive to power quality [6]. However, for alkaline systems, the buffering provided by the battery bank is often sufficient to maintain stable operation without complex power electronics.</p>
+<p><strong>Context:</strong> While buffering adds initial cost, it improves the round-trip efficiency of the system by preventing thermal cycling stress and optimizing electrolyzer operation. The consensus is that a battery buffer is not just a convenience but a requirement for a robust, efficient garage hydrogen system.</p>
+<h2 id="system-architecture-and-component-sourcing">System Architecture and Component Sourcing</h2>
+<figure class="section-image" data-img-url="https://www.ecosenseworld.com/uploads/footer_logo/og-image.jpg"><img src="https://www.ecosenseworld.com/uploads/footer_logo/og-image.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>Building a complete closed-loop system requires integrating several subsystems, each selected for availability and safety. The following architecture outlines the components necessary for a functional garage build.</p>
+<h3 id="solar-generation-and-electrical-storage">Solar Generation and Electrical Storage</h3>
+<p>The system begins with monocrystalline or polycrystalline PV panels connected to an MPPT charge controller. The controller feeds a LiFePO4 battery bank equipped with a Battery Management System (BMS). This electrical storage acts as the buffer, smoothing out solar input and providing stable power to the electrolyzer.</p>
+<h3 id="electrolyzer-and-hydrogen-production">Electrolyzer and Hydrogen Production</h3>
+<p>For the electrolyzer, builders should select a commercial off-the-shelf alkaline unit or construct a DIY alkaline cell using PVC piping, nickel electrodes, and a separator. The electrolyzer converts water and electricity into hydrogen and oxygen gas. The hydrogen is then directed to storage, while the oxygen can be vented safely or captured if needed.</p>
+<h3 id="hydrogen-storage">Hydrogen Storage</h3>
+<p>Hydrogen storage is a critical component that demands strict adherence to safety standards. Storage tanks must be certified and inspected regularly; DIY pressure vessels are strongly discouraged due to explosion risks. Suitable off-the-shelf options include repurposed scuba tanks or certified composite cylinders rated for pressures between 35 and 70 bar [3], [7]. The storage system must include pressure relief devices, check valves, and pressure regulators to prevent backflow and manage pressure differentials.</p>
+<h3 id="fuel-cell-and-power-recovery">Fuel Cell and Power Recovery</h3>
+<p>The fuel cell converts stored hydrogen back into electricity. A PEM fuel cell stack is a common off-the-shelf component for hobbyists and retrofits. The stack requires an air blower or compressor to supply oxygen for the reaction. The DC output of the fuel cell can be used directly or fed back into the battery bank via a DC-DC converter to match the load or charging requirements.</p>
+<h3 id="water-management-and-closed-loop">Water Management and Closed Loop</h3>
+<p>A key feature of a closed-loop system is water recovery. The fuel cell produces water as a byproduct of the electrochemical reaction. This water should be collected and recirculated to the electrolyzer to close the water loop, minimizing water consumption and enhancing system sustainability. For PEM systems, a deionization filter is required to maintain membrane integrity, while simple filtration is sufficient for alkaline systems [3], [7].</p>
+<h3 id="safety-and-monitoring">Safety and Monitoring</h3>
+<p>The system must include hydrogen gas sensors (LEL detectors) for continuous leak detection, a ventilation system to prevent H2 accumulation, and temperature and pressure sensors with automated shutdown controls. These components are non-negotiable for safe operation.</p>
+<h2 id="efficiency-analysis-and-performance-optimization">Efficiency Analysis and Performance Optimization</h2>
+<p>Understanding the efficiency of the system is crucial for setting realistic expectations. The solar-to-electricity-to-hydrogen-to-electricity cycle typically achieves a round-trip efficiency of 20–30% [3], [5]. Losses occur at multiple stages: solar conversion, electrolysis, compression/storage, and fuel cell conversion.</p>
+<h3 id="breakdown-of-losses">Breakdown of Losses</h3>
+<p>Alkaline electrolyzers operate at 60–70% efficiency, while PEM systems can reach up to 80% [3], [5]. Fuel cells typically convert hydrogen back to electricity with an efficiency of 40–60%. When combined with battery and inverter losses, the overall round-trip efficiency settles in the 20–30% range. While this may seem low, it is consistent with current garage-scale technologies and represents a viable method for long-term energy storage.</p>
+<h3 id="optimization-strategies">Optimization Strategies</h3>
+<p>To maximize efficiency, builders should consider several optimization strategies:
+*   <strong>Pressure Management:</strong> Minimize compression losses by storing hydrogen at moderate pressures if the fuel cell can operate at lower pressures.
+*   <strong>Heat Recovery:</strong> Recover waste heat from the fuel cell and electrolyzer for domestic hot water or space heating, improving overall system energy utilization.
+*   <strong>Water Purity:</strong> Ensure water purity in PEM systems to maintain stack efficiency and longevity [7].
+*   <strong>Buffering:</strong> Use a battery buffer to maintain optimal electrolyzer operating points, avoiding efficiency drops during low-solar conditions [6].</p>
+<p><strong>Comparison:</strong> Sources agree that while PEM offers higher electrolyzer efficiency, the overall system efficiency in a garage setting is often comparable to alkaline due to the added complexity and losses associated with water management and power conditioning. The choice between alkaline and PEM should therefore be driven by feasibility and cost rather than marginal efficiency gains.</p>
+<h2 id="safety-regulation-and-the-garage-reality">Safety, Regulation, and the Garage Reality</h2>
+<figure class="section-image" data-img-url="https://eureka.patsnap.com/blog/wp-content/uploads/2025/04/Eureka-by-Patsnap-LOGO-2.png"><img src="https://eureka.patsnap.com/blog/wp-content/uploads/2025/04/Eureka-by-Patsnap-LOGO-2.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>Building a hydrogen system in a garage necessitates rigorous safety protocols. Hydrogen is highly flammable, with a wide flammability range and low ignition energy. The workspace must have adequate ventilation to prevent explosive mixtures, and continuous monitoring with hydrogen sensors is mandatory.</p>
+<h3 id="pressure-vessels-and-chemical-safety">Pressure Vessels and Chemical Safety</h3>
+<p>Storage tanks must be certified and inspected regularly. DIY pressure vessels are strongly discouraged due to explosion risks [3], [7]. Additionally, alkaline systems use KOH electrolytes, which are corrosive; proper PPE and handling procedures are required. Electrical safety is also critical, as high currents and voltages in solar and electrolyzer systems require proper wiring, fusing, and grounding.</p>
+<h3 id="regulatory-considerations">Regulatory Considerations</h3>
+<p>Builders must adhere to local building codes and regulations regarding hydrogen storage and handling. This may include permits for pressure vessels, ventilation requirements, and fire safety measures. Engaging with local authorities and consulting with professionals is recommended to ensure compliance.</p>
+<p><strong>Consensus:</strong> All sources emphasize that safety is the paramount concern. The risks associated with hydrogen storage and handling cannot be overstated, and builders must prioritize safety over convenience or cost.</p>
+<h2 id="conclusion-the-verdict-for-the-garage-builder">Conclusion: The Verdict for the Garage Builder</h2>
+<p>The research provides a clear and actionable path for constructing a solar-to-hydrogen closed-loop system in a garage using off-the-shelf components. The optimal strategy combines <strong>alkaline electrolysis</strong> with a <strong>battery-buffered solar architecture</strong>. Alkaline electrolysis offers the best balance of efficiency, cost, and component availability, utilizing non-precious materials that are safe and accessible for DIY construction. PEM electrolysis, while more efficient and dynamic, presents significant barriers related to cost, water purity, and component sourcing, making it a secondary option for builders with higher budgets and technical expertise.</p>
+<p>A robust power management system using an MPPT controller and a LiFePO4 battery bank is essential to decouple solar generation from electrolyzer operation, ensuring stable hydrogen production and protecting components from solar variability. The system achieves a round-trip efficiency of 20–30%, a realistic figure that underscores the importance of energy storage over immediate conversion. Safety remains the critical constraint; the system requires certified pressure vessels, continuous hydrogen leak detection, and robust ventilation.</p>
+<p>For the garage builder, the path forward is to adopt alkaline electrolysis, implement battery buffering, source certified storage tanks, and prioritize safety at every step. By following these guidelines, builders can create a functional, safe, and educational closed-loop energy storage system that demonstrates the potential of solar hydrogen technology. Future developments in AEM technology may offer improved performance, but for now, alkaline electrolysis stands as the most practical and efficient solution for garage-scale implementation.</p>
+
+    <div class="sources-panel">
+<details>
+<summary>Sources (7)</summary>
+<div class="sources-list">
+<a href="https://www.power-h2.com/insights/pem-vs-aem-electrolysers" target="_blank" rel="noopener noreferrer"><span class="snum">1.</span><span>PEM vs AEM Electrolysers - Comparison of Electrolysis Technology</span><span class="sdomain">power-h2.com</span></a>
+<a href="https://eureka.patsnap.com/article/solar-hydrogen-electrolysis-pem-vs-alkaline-vs-soec-comparisons" target="_blank" rel="noopener noreferrer"><span class="snum">2.</span><span>Solar Hydrogen Electrolysis: PEM vs. Alkaline vs. SOEC Comparisons</span><span class="sdomain">eureka.patsnap.com</span></a>
+<a href="https://eureka.patsnap.com/report-comparative-analysis-of-pem-and-alkaline-electrolyzers-for-green-hydrogen" target="_blank" rel="noopener noreferrer"><span class="snum">3.</span><span>Comparative analysis of PEM and alkaline electrolyzers for green hydrogen</span><span class="sdomain">eureka.patsnap.com</span></a>
+<a href="https://www.ecosenseworld.com/blog/electrolyzer-technologies-explained-alkaline-vs-pem-vs-soec-vs-aem" target="_blank" rel="noopener noreferrer"><span class="snum">4.</span><span>Electrolyzer Technologies Explained: Alkaline vs PEM vs SOEC vs AEM</span><span class="sdomain">ecosenseworld.com</span></a>
+<a href="https://www.hyto-life.com/blog/pem-vs-aem-electrolyzers-which-is-better-for-solar-coupling" target="_blank" rel="noopener noreferrer"><span class="snum">5.</span><span>PEM vs AEM Electrolyzers: Which is Better for Solar Coupling?</span><span class="sdomain">hyto-life.com</span></a>
+<a href="https://link.springer.com/article/10.1007/s43937-024-00036-6" target="_blank" rel="noopener noreferrer"><span class="snum">6.</span><span>Techno economic analysis of electrolytic hydrogen production by ...</span><span class="sdomain">link.springer.com</span></a>
+<a href="https://www.azocleantech.com/article.aspx?ArticleID=2148" target="_blank" rel="noopener noreferrer"><span class="snum">7.</span><span>Choosing Between PEM and AEM Electrolyzers</span><span class="sdomain">azocleantech.com</span></a>
+</div>
+</details>
+</div>
+
+    <div class="chat-cta"><button id="btn-chat-about" class="chat-cta-btn" data-research-id="rp-ac94e2a02aa4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Discuss</span></button><div class="chat-cta-hint">Opens a new chat with this report as context.</div></div>
+  </main>
+</div>
+
+<div class="report-footer">
+  Generated by Odysseus Deep Research · June 18, 2026 at 21:57
+</div>
+
+<script>
+(function() {
+  // ESC closes the report tab. window.close() works when the tab was
+  // opened via window.open() (which is how the panel launches it). If the
+  // browser blocks self-close (rare — e.g. report opened by direct URL),
+  // fall back to history.back() so ESC still feels responsive.
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    // Don't hijack ESC while typing in a field or with an open dropdown.
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    var menu = document.getElementById('export-menu');
+    if (menu && menu.classList.contains('open')) { menu.classList.remove('open'); return; }
+    try { window.close(); } catch (err) {}
+    // window.close() is a no-op when the tab wasn't script-opened; in that
+    // case fall back to navigation so the key isn't ignored.
+    setTimeout(function() { if (!window.closed) history.back(); }, 50);
+  });
+
+  // Export dropdown toggle
+  var exportBtn = document.getElementById('btn-export');
+  var exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { exportMenu.classList.remove('open'); });
+
+  // Save as PDF (browser print)
+  document.getElementById('btn-pdf').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    window.print();
+  });
+
+  // Download HTML
+  document.getElementById('btn-html').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = document.title.replace(/[^a-z0-9]+/gi, '-').substring(0, 60) + '.html';
+    a.click();
+  });
+
+  // Per-image hide — fades the image out, then POSTs to the backend so
+  // future renders of this report skip the URL. Falls back to a silent
+  // no-op if there's no session_id (e.g. the report was opened from a
+  // saved-HTML download where the backend isn't reachable).
+  var __sessionId = "rp-ac94e2a02aa4";
+  // Unused scraped images — the reroll pool. Each is used at most once.
+  var __spareImages = ["https://www.azocleantech.com/images/Article_Images/ImageForArticle_2148_17798729299274643.png"];
+
+  // Persist a rejected URL so future renders skip it.
+  function __persistHide(url) {
+    if (!__sessionId || !url) return;
+    fetch('/api/research/' + encodeURIComponent(__sessionId) + '/hide-image', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url }),
+    }).catch(function(err) { console.warn('hide-image POST failed', err); });
+  }
+
+  // Once the pool is empty, there's nothing to swap to — hide all reroll btns.
+  function __syncRerollAvailability() {
+    if (__spareImages.length === 0) {
+      document.querySelectorAll('.img-reroll-btn').forEach(function(b) { b.disabled = true; });
+    }
+  }
+
+  document.querySelectorAll('.img-hide-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var url = wrap.dataset.imgUrl;
+      wrap.classList.add('fading');
+      setTimeout(function() { wrap.remove(); }, 280);
+      __persistHide(url);
+    });
+  });
+
+  // Reroll — swap the current image for the next unused scraped one, and
+  // persist-hide the rejected URL so it won't resurface on reload.
+  document.querySelectorAll('.img-reroll-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      // Per-button busy flag — a rapid double-click would otherwise both
+      // shift the spare pool, but only the second probe's image would land,
+      // silently consuming the first one. Bail until finish() clears it.
+      if (btn.dataset._busy === '1') return;
+      if (__spareImages.length === 0) { btn.disabled = true; return; }
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      btn.dataset._busy = '1';
+      var oldUrl = wrap.dataset.imgUrl;
+      var newUrl = __spareImages.shift();
+      btn.classList.add('spinning');
+      // Swap once the new image has loaded (or failed) to avoid a flash of empty.
+      var probe = new Image();
+      var done = false;
+      var finish = function(ok) {
+        if (done) return; done = true;
+        btn.classList.remove('spinning');
+        delete btn.dataset._busy;
+        if (ok) {
+          img.src = newUrl;
+          wrap.dataset.imgUrl = newUrl;
+          __persistHide(oldUrl);
+        } else {
+          // Bad candidate — persist-hide it so it can't resurface on reload,
+          // then try the next spare if any remain. Busy flag already cleared
+          // so the synthetic click below proceeds.
+          __persistHide(newUrl);
+          if (__spareImages.length) btn.click();
+        }
+        __syncRerollAvailability();
+      };
+      probe.onload = function() { finish(true); };
+      probe.onerror = function() { finish(false); };
+      probe.src = newUrl;
+    });
+  });
+  __syncRerollAvailability();
+
+  // "Show hidden (N)" button — clears the hidden_images list on the
+  // server, then reloads the page so all images come back.
+  var restoreBtn = document.getElementById('btn-restore-images');
+  if (restoreBtn && __sessionId) {
+    restoreBtn.addEventListener('click', function() {
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = 'Restoring…';
+      fetch('/api/research/' + encodeURIComponent(__sessionId) + '/unhide-images', {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function() { window.location.reload(); })
+        .catch(function(err) {
+          restoreBtn.disabled = false;
+          restoreBtn.textContent = 'Failed — retry?';
+          console.warn('unhide-images POST failed', err);
+        });
+    });
+  }
+
+  // TOC: explicit smooth-scroll handler (some browsers/anchor plugins
+  // bypass the CSS `scroll-behavior: smooth` rule on hash clicks).
+  // Also keeps the URL hash updated and toggles an `.active` highlight.
+  var tocLinks = document.querySelectorAll('.toc-sidebar nav a[href^="#"]');
+  tocLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var id = link.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  // Highlight the TOC entry that matches whichever heading is currently
+  // closest to the top of the viewport. IntersectionObserver keeps it
+  // cheap (no scroll listener spam).
+  var tocMap = {};
+  tocLinks.forEach(function(link) {
+    tocMap[link.getAttribute('href').slice(1)] = link;
+  });
+  var activeId = null;
+  function setActive(id) {
+    if (id === activeId) return;
+    if (activeId && tocMap[activeId]) tocMap[activeId].classList.remove('active');
+    if (id && tocMap[id]) tocMap[id].classList.add('active');
+    activeId = id;
+  }
+  var headings = document.querySelectorAll('.content h2[id], .content h3[id]');
+  if (headings.length && 'IntersectionObserver' in window) {
+    var visible = new Set();
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        if (en.isIntersecting) visible.add(en.target.id);
+        else visible.delete(en.target.id);
+      });
+      // Pick the visible heading that's furthest down in document order
+      // before the current scroll — i.e. the section we're reading.
+      var current = null;
+      for (var i = 0; i < headings.length; i++) {
+        if (visible.has(headings[i].id)) { current = headings[i].id; break; }
+      }
+      if (current) setActive(current);
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+    headings.forEach(function(h) { io.observe(h); });
+  }
+
+  // Chat about this research — POST to spinoff and redirect to the new chat
+  var chatBtn = document.getElementById('btn-chat-about');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function() {
+      var researchId = chatBtn.dataset.researchId;
+      if (!researchId) return;
+      var origLabel = chatBtn.innerHTML;
+      chatBtn.disabled = true;
+      chatBtn.innerHTML = '<span>Creating chat…</span>';
+      fetch('/api/research/spinoff/' + encodeURIComponent(researchId), {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(d) {
+            throw new Error(d && d.detail ? d.detail : ('HTTP ' + res.status));
+          }, function() { throw new Error('HTTP ' + res.status); });
+        }
+        return res.json();
+      }).then(function(data) {
+        if (!data || !data.session_id) {
+          throw new Error('Server did not return a session id');
+        }
+        var url = '/#' + data.session_id;
+        var opened = false;
+        // The report typically opens in a new tab — if we have access to the
+        // original Odysseus tab, navigate it and close this report tab so the
+        // user lands directly in the new chat.
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.href = url;
+            window.opener.location.reload();
+            window.opener.focus();
+            opened = true;
+            window.close();
+          }
+        } catch (e) { /* cross-origin or detached opener — fall through */ }
+        if (!opened) {
+          // No opener (report was opened directly via URL) — open the chat in a
+          // new tab so the report stays available.
+          var w = window.open(url, '_blank');
+          if (w) {
+            chatBtn.disabled = false;
+            chatBtn.innerHTML = '<span>Chat opened in new tab</span>';
+          } else {
+            // Popup blocked — navigate this tab as a last resort.
+            window.location.href = url;
+            window.location.reload();
+          }
+        }
+      }).catch(function(err) {
+        chatBtn.disabled = false;
+        chatBtn.innerHTML = origLabel;
+        alert('Could not start follow-up chat: ' + err.message);
+      });
+    });
+  }
+})();
+
+// Colorize comparison table cells
+if (document.body.classList.contains('category-comparison')) {
+  const pos = /^(yes|excellent|best|great|strong|fast|high|superior|winner|free|unlimited|native|full|advanced|built[- ]in|✓|✅|⭐)/i;
+  const neg = /^(no|none|poor|weak|slow|low|limited|lacking|missing|basic|minimal|✗|❌|N\/A$)/i;
+  const mid = /^(moderate|average|fair|partial|some|decent|okay|mixed|varies|depends)/i;
+  document.querySelectorAll('.content table td').forEach(td => {
+    if (td.cellIndex === 0) return;
+    const t = td.textContent.trim();
+    if (pos.test(t)) td.classList.add('cmp-pos');
+    else if (neg.test(t)) td.classList.add('cmp-neg');
+    else if (mid.test(t)) td.classList.add('cmp-mid');
+  });
+}
+</script>
+
+
+</body></html>
