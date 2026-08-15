@@ -51,8 +51,13 @@ good(){ echo -e "${OK}[OK]${N} $*"; }
 warn(){ echo -e "${WN}[!]${N} $*" >&2; }
 die(){  echo -e "${ER}[FAIL]${N} $*" >&2; exit 1; }
 
-# ----- config (kept in sync with setup_local_ai.sh) -------------------------
+# ----- config (kept in sync with install_local_ai.sh) -----------------------
 SERVICES=(llama.service odysseus.service)
+STAMP_DIR="/var/lib/patteros"     # unit checksums + the first-login file
+# Default ports. These are only a fallback: the installer lets the user pick
+# different ones, and if we assumed 8020/7000 here we would delete firewall
+# rules that were never added and leave the user's real ports open. So we read
+# the ports back out of the installed unit files first, below.
 PORT_LLAMA=8020
 PORT_ODY=7000
 # Build/Vulkan extras the installer added FOR THIS PROJECT (safe to purge).
@@ -89,11 +94,27 @@ REAL_USER="${SUDO_USER:-}"
 [[ -n "${REAL_USER}" && "${REAL_USER}" != "root" ]] || die "Run via sudo as your normal user:  sudo bash $(basename "$0")"
 USER_HOME="$(getent passwd "${REAL_USER}" | cut -d: -f6)"
 [[ -d "${USER_HOME}" ]] || die "Could not find the home directory for ${REAL_USER}."
+# Invoked indirectly, as an argument to RUN (see safe_rm and the LACT step).
+# The call sites are therefore invisible to static analysis, which reports this
+# as an unused function; SC2329 is disabled here for that reason.
+# shellcheck disable=SC2329
 as_user(){ sudo -u "${REAL_USER}" -H "$@"; }
 
 MODELS_DIR="${USER_HOME}/models"
 LLAMA_DIR="${USER_HOME}/llama.cpp"
 ODY_DIR="${USER_HOME}/odysseus"
+
+# Recover the ports the installer actually used, rather than assuming the
+# defaults. The installer's Customise menu lets people change both, and a user
+# who chose port 9000 would otherwise keep an open 9000 rule forever while we
+# cheerfully deleted a rule for 8020 that never existed.
+read_port(){ # $1 unit file, $2 fallback
+  local p=""
+  [[ -r "$1" ]] && p="$(grep -oE -- '--port[= ]+[0-9]+' "$1" 2>/dev/null | grep -oE '[0-9]+' | head -1 || true)"
+  [[ "${p}" =~ ^[0-9]+$ ]] && echo "${p}" || echo "$2"
+}
+PORT_LLAMA="$(read_port /etc/systemd/system/llama.service    "${PORT_LLAMA}")"
+PORT_ODY="$(  read_port /etc/systemd/system/odysseus.service "${PORT_ODY}")"
 
 # refuse to rm anything that isn't safely under the user's home
 safe_rm(){
@@ -150,6 +171,17 @@ if [[ "${SVC_TOUCHED}" == "yes" ]]; then
   RUN systemctl daemon-reload
   for svc in "${SERVICES[@]}"; do RUN systemctl reset-failed "${svc}" >/dev/null 2>&1 || true; done
 fi
+# The installer keeps a copy of any unit it declined to overwrite. Those are
+# the user's own edits, so mention them rather than deleting them silently.
+for svc in "${SERVICES[@]}"; do
+  bak="/etc/systemd/system/${svc}.patteros-backup"
+  if [[ -f "${bak}" ]]; then
+    RUN rm -f "${bak}"; ok_did "Removed the saved copy of your edited ${svc}"
+  fi
+done
+
+# NOTE: PatterOS's own state under ${STAMP_DIR} is removed at the END, in step
+# 9, because the group-membership step still needs to read it.
 
 # ======================================================================== 2 ==
 step "2  Removing llama.cpp (clone + build)"
@@ -196,7 +228,27 @@ else
 fi
 
 # ======================================================================== 7 ==
-step "7  Packages"
+step "7  GPU group membership"
+# On AMD/Intel rigs the installer may add the user to 'render' and 'video' so
+# the background service can reach the GPU. Reverse ONLY what we recorded
+# adding: plenty of desktops put users in 'video' by default, and removing that
+# would break their graphics for reasons they would never connect to us.
+GROUPS_FILE="${STAMP_DIR}/groups-added"
+if [[ -r "${GROUPS_FILE}" ]]; then
+  while read -r guser ggroup; do
+    [[ -n "${guser}" && -n "${ggroup}" ]] || continue
+    if id -nG "${guser}" 2>/dev/null | grep -qw "${ggroup}"; then
+      RUN gpasswd -d "${guser}" "${ggroup}" >/dev/null 2>&1 || warn "Could not remove ${guser} from '${ggroup}'."
+      ok_did "Removed ${guser} from the '${ggroup}' group (PatterOS added it)"
+    fi
+  done < "${GROUPS_FILE}"
+  info "Log out and back in for the group change to take effect."
+else
+  info "No group changes were recorded, so nothing to undo here."
+fi
+
+# ======================================================================== 8 ==
+step "8  Packages"
 NEED_AUTOREMOVE="no"
 if [[ "${DO_PKGS}" == "yes" ]]; then
   export DEBIAN_FRONTEND=noninteractive
@@ -212,8 +264,8 @@ else
   info "Leaving apt packages as-is (use --packages to purge build/Vulkan extras)."
 fi
 
-# ======================================================================== 8 ==
-step "8  GPU drivers / CUDA"
+# ======================================================================== 9 ==
+step "9  GPU drivers / CUDA"
 NEED_REBOOT="no"
 if [[ "${DO_DRIVERS}" == "yes" ]]; then
   export DEBIAN_FRONTEND=noninteractive
@@ -239,7 +291,20 @@ fi
 
 [[ "${NEED_AUTOREMOVE}" == "yes" ]] && { step "Cleaning up orphaned dependencies"; RUN apt-get autoremove -y -qq || true; }
 
-# ======================================================================== 9 ==
+# ======================================================================= 10 ==
+step "10  PatterOS's own records"
+# Done last, because the group step above reads the file this removes.
+# Leaving it behind would make a future install think it still owned service
+# files it no longer wrote, and would leave the saved first-login password on
+# disk after everything it unlocked has gone.
+if [[ -d "${STAMP_DIR}" ]]; then
+  RUN rm -rf -- "${STAMP_DIR}"
+  ok_did "Removed ${STAMP_DIR} (service checksums, group record, saved first-login details)"
+else
+  info "Not present (skipped): ${STAMP_DIR}"
+fi
+
+# ======================================================================= 11 ==
 echo -e "${OK}${B}"
 echo "=============================================================="
 echo "   Reset complete."
@@ -254,4 +319,13 @@ echo "  You can now re-run a clean install:  sudo bash setup_local_ai.sh"
 if [[ "${NEED_REBOOT}" == "yes" ]]; then
   echo -e "${WN}  Reboot before re-installing so the old driver fully unloads:  sudo reboot${N}"
 fi
-[[ "${DRY}" == "yes" ]] && warn "That was a DRY RUN — nothing was actually changed."
+if [[ "${DRY}" == "yes" ]]; then
+  warn "That was a DRY RUN, so nothing was actually changed."
+fi
+
+# Exit 0 explicitly. The last statement used to be a bare
+# `[[ "${DRY}" == "yes" ]] && warn ...`, which evaluates to FALSE on a real
+# run, so a successful uninstall returned 1 and only a dry run returned 0,
+# exactly backwards. Anything checking the exit code (CI, a wrapper script, or
+# `&&` on the command line) was told every successful reset had failed.
+exit 0
