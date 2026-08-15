@@ -790,7 +790,17 @@ if (( ${#MODEL_SET[@]} > 0 )); then
     # Trust nothing: confirm a file actually landed and is a plausible size.
     # A truncated or zero-byte file otherwise fails much later, at load time,
     # where the error makes no sense to a beginner.
-    got="$(as_user find "${MODELS_DIR}" -maxdepth 2 -name "${glob##*/}" -size +100M 2>/dev/null | head -1 || true)"
+    # Look for the file THIS repo just produced, not merely something matching
+    # the quantisation pattern. ~/models holds every model you have ever
+    # downloaded, and they all match a glob like *UD-Q4_K_XL*.gguf, so a bare
+    # glob can pick up a different model entirely. When it picked a smaller one
+    # the size check below then failed and reported a perfectly good download as
+    # incomplete. Hugging Face names the file after the repo, so anchoring on
+    # the repo name makes the match specific.
+    base="$(basename "${repo}")"; base="${base%-GGUF}"
+    got="$(as_user find "${MODELS_DIR}" -maxdepth 2 -name "${base}${glob}" -size +100M 2>/dev/null | head -1 || true)"
+    # Fall back to the plain glob for any repo that does not follow that naming.
+    [[ -n "${got}" ]] || got="$(as_user find "${MODELS_DIR}" -maxdepth 2 -name "${glob##*/}" -size +100M 2>/dev/null | head -1 || true)"
     if [[ -z "${got}" ]]; then
       warn "${repo} reported success but no file matching ${glob} of a sensible size is in ${MODELS_DIR}."
       DL_FAIL=$((DL_FAIL+1)); continue

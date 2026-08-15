@@ -171,6 +171,34 @@ has "${SANDBOX}/calls.log" "unsloth/gemma-4-E4B-it-qat-GGUF" "requests the E4B Q
 has "${OUT}" "All 2 model(s) downloaded" "reports both as downloaded"
 
 # ---------------------------------------------------------------------------
+# 11b. REGRESSION. Verification must check the file THIS repo produced.
+#
+# ~/models accumulates every model you have ever downloaded, and they all match
+# a glob like *UD-Q4_K_XL*.gguf. The verification step used the bare glob and
+# took the first match, so on a directory already holding a larger model it
+# could size-check the wrong file and report a good download as incomplete.
+# Whether it happened depended on filesystem ordering, so it passed locally and
+# failed in CI. Seed a big unrelated model first and assert both still verify.
+# ---------------------------------------------------------------------------
+mkdir -p "/home/${U}/models"
+head -c 200000000 /dev/zero > "/home/${U}/models/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf"
+chown -R "${U}" "/home/${U}/models" 2>/dev/null || true
+STUB_GPU=nvidia STUB_NVIDIA=ok STUB_VRAM_MB=24576 STUB_DISK_GB=500 \
+  run_case "express tier, models directory not empty" --no-odysseus --skip-firewall
+has "${OUT}" "All 2 model(s) downloaded" "verifies the right file when others are present"
+hasnt "${OUT}" "may be incomplete" "does not call a good download incomplete"
+# The decisive check. Each confirmation must name the file for the repo that was
+# just fetched. Matching on the bare glob would confirm whichever file `find`
+# happened to return first, which is directory-order dependent: that is why this
+# passed locally and failed in CI.
+confirmed="$(grep -oE '\[OK\] gemma-4-[A-Za-z0-9._-]+\.gguf' "${OUT}" | awk '{print $2}')"
+if [[ "$(echo "${confirmed}" | sed -n 1p)" == gemma-4-E2B* ]]; then ok "confirms the E2B file for the E2B repo"
+else bad "confirms the E2B file for the E2B repo" "got: $(echo "${confirmed}" | sed -n 1p)"; fi
+if [[ "$(echo "${confirmed}" | sed -n 2p)" == gemma-4-E4B* ]]; then ok "confirms the E4B file for the E4B repo"
+else bad "confirms the E4B file for the E4B repo" "got: $(echo "${confirmed}" | sed -n 2p)"; fi
+rm -f "/home/${U}/models/gemma-4-31B-it-qat-UD-Q4_K_XL.gguf"
+
+# ---------------------------------------------------------------------------
 # 12. Older huggingface_hub: only huggingface-cli exists.
 # ---------------------------------------------------------------------------
 STUB_GPU=none STUB_HAS_HF=0 STUB_DISK_GB=500 \

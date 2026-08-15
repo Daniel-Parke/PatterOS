@@ -57,7 +57,10 @@ shipping, and two of them could cost you an evening.
   assuming the whole model fits. Override with `NGL=<number>`.
 - **Downloads reported success even when nothing arrived.** Each file is now
   checked for existence and a plausible size, and `huggingface-cli` is used
-  when the newer `hf` command is not present.
+  when the newer `hf` command is not present. That check also looks for the file
+  the repository just produced rather than anything matching the quantisation
+  pattern: with several models in `~/models` it could otherwise size-check a
+  different one and tell you a perfectly good download was incomplete.
 - **The uninstaller exited with an error after a successful run.** Its last
   statement was a condition that is false on a real run, so a completed reset
   reported failure and only a dry run reported success. Anything scripted around
