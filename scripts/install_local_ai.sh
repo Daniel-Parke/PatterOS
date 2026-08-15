@@ -106,15 +106,27 @@ ODY_COMMIT="${ODY_COMMIT:-cf4e240ad1622da6a904f496b19d656a2b9c6393}"
 
 # Models: "HF repo | filename glob | approx GB". The size is used to check you
 # have the disk and the memory BEFORE anything is downloaded.
-# All entries are q4-class on purpose: a model either fits in memory or it
-# does not, and q4 is what makes these fit on a real budget card.
+#
+# All entries are q4-class on purpose: a model either fits in memory or it does
+# not, and q4 is what makes these fit on a real budget card. We never download
+# full-precision weights.
+#
+# These are the QAT (quantisation-aware training) builds. Google trains these
+# with the quantisation in mind rather than compressing afterwards, and they are
+# 0.6 to 1.6 GB smaller per model than the standard builds at the same
+# UD-Q4_K_XL level, which matters on the 512 GB drive in the Part 1 build. They
+# are also the builds used for this project's own comparison tests.
+# Every repo below was checked on 15 August 2026: all four resolve, all are
+# Apache 2.0 and ungated, and each contains exactly ONE file matching the glob.
+# Watch the casing: E2B and E4B are capitals, and 12B and 31B are capital B in
+# the QAT repos (the non-QAT 12b repo uses a lowercase b).
 EXPRESS_MODELS=(
-  "unsloth/gemma-4-E2B-it-GGUF|*UD-Q4_K_XL*.gguf|3.2"    # tiny, runs anywhere
-  "unsloth/gemma-4-E4B-it-GGUF|*UD-Q4_K_XL*.gguf|5.2"    # small but capable
+  "unsloth/gemma-4-E2B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|2.7"    # tiny, runs anywhere
+  "unsloth/gemma-4-E4B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|4.3"    # small but capable
 )
 FULL_MODELS=(
-  "unsloth/gemma-4-12b-it-GGUF|*UD-Q4_K_XL*.gguf|7.4"    # strong mid-size all-rounder
-  "unsloth/gemma-4-31B-it-GGUF|*UD-Q4_K_XL*.gguf|18.9"   # top quality on a 24 GB card
+  "unsloth/gemma-4-12B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|6.8"    # strong mid-size all-rounder
+  "unsloth/gemma-4-31B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|17.3"   # top quality on a 24 GB card
 )
 
 # ----- args -----------------------------------------------------------------
