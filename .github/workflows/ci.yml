@@ -1,0 +1,114 @@
+name: CI
+
+# PatterOS runs as root on other people's machines, often their only computer.
+# The promise is "this will not break your rig", so the tests exist to keep that
+# promise honest rather than to tick a box.
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  shellcheck:
+    name: shellcheck
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        # Two versions on purpose. They disagree: 0.9 (what Ubuntu 24.04 ships,
+        # so what a contributor gets from apt) reports SC2317 where 0.11 reports
+        # SC2329, and 0.9 flags `a && b || true` patterns that 0.11 does not.
+        # Passing only the newer one meant CI would have failed on findings that
+        # never appeared locally.
+        version: ["v0.9.0", "v0.11.0"]
+    container: koalaman/shellcheck-alpine:${{ matrix.version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Version
+        run: shellcheck --version
+      - name: Lint every shell script
+        run: |
+          # Fail on anything, including info-level findings. The scripts are
+          # currently clean, so the bar is "stays clean", not "gets no worse".
+          shellcheck --severity=style scripts/*.sh tests/*.sh
+
+  syntax:
+    name: bash syntax
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse every script
+        run: for f in scripts/*.sh tests/*.sh; do echo "checking $f"; bash -n "$f"; done
+      - name: Help output renders and exits 0
+        run: |
+          bash scripts/install_local_ai.sh --help > /tmp/i.txt
+          bash scripts/uninstall_local_ai.sh --help > /tmp/u.txt
+          # The help is printed by reading the header to a sentinel. If that
+          # sentinel is ever removed the output collapses, so assert a floor.
+          for f in /tmp/i.txt /tmp/u.txt; do
+            n=$(wc -l < "$f")
+            echo "$f has $n lines"
+            [ "$n" -ge 25 ] || { echo "help output looks truncated"; cat "$f"; exit 1; }
+          done
+          if grep -q 'end of help' /tmp/i.txt; then
+            echo "the sentinel comment leaked into the help output"; exit 1
+          fi
+
+  consistency:
+    name: docs match the scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Scripts and guide agree
+        run: bash tests/test_docs_consistency.sh
+      - name: Part 1 guide is not stale
+        run: python3 tools/patch_part1_docx.py --check
+      - name: Every relative link in the docs resolves
+        run: |
+          python3 - <<'PY'
+          import re, os, glob, sys, urllib.parse
+          bad = 0
+          for f in ['README.md'] + sorted(glob.glob('docs/*.md')):
+              base = os.path.dirname(f)
+              for m in re.finditer(r'\[([^\]]*)\]\(([^)]+)\)', open(f, encoding='utf-8').read()):
+                  href = m.group(2)
+                  if href.startswith(('http://', 'https://', '#', 'mailto:')):
+                      continue
+                  p = os.path.normpath(os.path.join(base, urllib.parse.unquote(href.split('#')[0])))
+                  if not os.path.exists(p):
+                      print(f'BROKEN {f} -> {href}'); bad += 1
+          sys.exit(1 if bad else 0)
+          PY
+
+  behaviour:
+    name: install and remove round trip
+    runs-on: ubuntu-24.04
+    container: ubuntu:24.04
+    steps:
+      - name: Dependencies
+        run: apt-get update -qq && apt-get install -y -qq git ca-certificates
+      - uses: actions/checkout@v4
+      - name: A hand-edited service file survives a re-run
+        run: bash tests/test_unit_preservation.sh
+      - name: The uninstaller reverses an install without collateral damage
+        run: bash tests/test_uninstall_reversal.sh
+
+  line-endings:
+    name: no CRLF in shell scripts
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject CRLF
+        run: |
+          # A CRLF shell script fails on Linux with a confusing error. The repo
+          # is maintained from Windows, so this is a real risk, not a theory.
+          bad=0
+          for f in $(git ls-files '*.sh'); do
+            if grep -qU $'\r' "$f"; then echo "CRLF in $f"; bad=1; fi
+          done
+          exit $bad

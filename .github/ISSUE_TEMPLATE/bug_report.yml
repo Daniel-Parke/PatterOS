@@ -1,0 +1,67 @@
+name: Something went wrong
+description: The installer, the uninstaller or a guide did not do what it should
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. You do not need to know what caused it, and
+        you do not need to be a developer. Just tell us what you did and what
+        happened.
+
+        If this is a security problem, please read
+        [SECURITY.md](https://github.com/Daniel-Parke/PatterOS/blob/main/SECURITY.md)
+        first and report it privately instead.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What did you run, and what did it do instead of what you expected?
+      placeholder: |
+        I ran: sudo bash scripts/install_local_ai.sh
+        I expected it to finish, but it stopped at the model download step.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: What did it print?
+      description: >
+        Paste the interesting part, or all of it. If a service failed, this
+        usually helps: sudo journalctl -u llama.service -n 50
+      render: shell
+
+  - type: input
+    id: os
+    attributes:
+      label: Which system?
+      description: "Run: cat /etc/os-release | head -2"
+      placeholder: Linux Mint 22.2, based on Ubuntu 24.04
+    validations:
+      required: true
+
+  - type: input
+    id: gpu
+    attributes:
+      label: Which graphics card?
+      description: "Run: lspci | grep -Ei 'vga|3d|display'"
+      placeholder: NVIDIA GeForce RTX 3090 Ti, or "none, CPU only"
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Which version of the script?
+      description: The line near the top that says v1.4, or the date you downloaded it
+      placeholder: v1.4
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: A couple of quick things that solve most problems
+      options:
+        - label: I have tried running the script again (it is safe to re-run and it resumes)
+        - label: I have restarted the machine, if it asked me to

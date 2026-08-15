@@ -55,6 +55,9 @@
 #  included) without looking inside it. The comments explain every phase:
 #      less install_local_ai.sh        (press q to quit the viewer)
 # --- end of help ------------------------------------------------------------
+#
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Daniel Parke. See LICENSE and NOTICE.
 # =============================================================================
 set -Eeuo pipefail
 
@@ -411,9 +414,9 @@ show_plan(){
   echo "  LACT tuning:   ${WANT_LACT}$( [[ "${VENDOR}" == "cpu" ]] && echo '   (no GPU to tune)' )"
   echo "  Firewall:      $([[ "${SKIP_FW}" == "yes" ]] && echo "leave as-is" || echo "enable (SSH allowed; everything else stays local)")"
   local skips=""
-  [[ "${SKIP_UPGRADE}" == "yes" ]] && skips+=" upgrade" || true
-  [[ "${SKIP_DRIVERS}" == "yes" ]] && skips+=" drivers" || true
-  [[ "${SKIP_BUILD}"   == "yes" ]] && skips+=" build"   || true
+  if [[ "${SKIP_UPGRADE}" == "yes" ]]; then skips+=" upgrade"; fi
+  if [[ "${SKIP_DRIVERS}" == "yes" ]]; then skips+=" drivers"; fi
+  if [[ "${SKIP_BUILD}"   == "yes" ]]; then skips+=" build";   fi
   if [[ -n "${skips}" ]]; then echo "  Skipping:     ${skips}"; fi
   return 0
 }

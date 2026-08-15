@@ -222,7 +222,16 @@ Built one of the Part 1 configurations? Here’s what your card comfortably runs
 | No GPU (CPU only) | Start with E2B (E4B works if you’re patient). Your 64 GB of RAM is exactly what makes this possible. |
 
 > Bigger models, and what “UD-Q4_K_XL” means
-> Got a 24 GB card? Download a bigger model into the `same` folder too, for example `unsloth/gemma-4-31B-it-qat-GGUF` or `unsloth/gemma-4-12B-it-qat-GGUF`, and you’ll be able to switch between them live in Step 7. The rule of thumb: the model file should be a bit smaller than your VRAM.
+> Want more than one? Download others into the `same` folder and you’ll be able to switch between them live in Step 7. The rule of thumb: the model file should be a bit smaller than your VRAM. These are the four the installer offers, smallest first:
+>
+> | Model | Repository | Size on disk |
+> |---|---|---|
+> | Gemma 4 E2B | `unsloth/gemma-4-E2B-it-qat-GGUF` | 2.7 GB |
+> | Gemma 4 E4B | `unsloth/gemma-4-E4B-it-qat-GGUF` | 4.3 GB |
+> | Gemma 4 12B | `unsloth/gemma-4-12B-it-qat-GGUF` | 6.8 GB |
+> | Gemma 4 31B | `unsloth/gemma-4-31B-it-qat-GGUF` | 17.3 GB |
+>
+> Mind the capital letters in the repository names; Hugging Face is forgiving about them but your own file paths will not be.
 > That `UD-Q4_K_XL` in the name is the quantisation, how much the model has been compressed. It’s a well-balanced choice: much smaller than the original, with very little quality lost. You don’t need to think about it beyond picking files with that label.
 
 Later, when you go exploring beyond Gemma: every model page on Hugging Face gives you the same three clues. The number in the name (`4B`, `12B`, `31B`…) is its size in “parameters”, bigger is smarter and hungrier. The file size listed next to each GGUF is roughly the memory it needs, so compare it to your VRAM. And models marked `-it` or `-instruct` are the ones tuned for conversation, that’s what you want for chat.

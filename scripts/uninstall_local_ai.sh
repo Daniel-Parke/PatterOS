@@ -39,6 +39,9 @@
 #
 #  Safe to run repeatedly and safe to run on a rig where setup only got halfway.
 # --- end of help ------------------------------------------------------------
+#
+# SPDX-License-Identifier: Apache-2.0
+# Copyright 2026 Daniel Parke. See LICENSE and NOTICE.
 # =============================================================================
 set -uo pipefail   # NOTE: no -e, an uninstaller must keep going if a step is a no-op
 
@@ -100,8 +103,9 @@ USER_HOME="$(getent passwd "${REAL_USER}" | cut -d: -f6)"
 [[ -d "${USER_HOME}" ]] || die "Could not find the home directory for ${REAL_USER}."
 # Invoked indirectly, as an argument to RUN (see safe_rm and the LACT step).
 # The call sites are therefore invisible to static analysis, which reports this
-# as an unused function; SC2329 is disabled here for that reason.
-# shellcheck disable=SC2329
+# as an unused or unreachable function. Two codes because different shellcheck
+# versions report it differently: 0.9 says SC2317, 0.11 says SC2329.
+# shellcheck disable=SC2317,SC2329
 as_user(){ sudo -u "${REAL_USER}" -H "$@"; }
 
 MODELS_DIR="${USER_HOME}/models"

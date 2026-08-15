@@ -4,5 +4,37 @@ Copyright 2026 Daniel Parke
 Licensed under the Apache License, Version 2.0.
 See LICENSE for the full license text.
 
-Trademarks: Patter, PatterOS, PatterTech, and related marks are
+Trademarks: Patter, PatterOS, PatterTech, PatterStage, and related marks are
 not licensed under Apache 2.0. See TRADEMARK.md.
+
+--------------------------------------------------------------------------------
+THIRD-PARTY SOFTWARE
+
+PatterOS does not bundle or redistribute any of the following. The installer
+downloads and sets them up on the user's own machine, at the user's choice, and
+each remains under its own licence and copyright. Every component is optional.
+
+llama.cpp
+    https://github.com/ggml-org/llama.cpp
+    MIT License. Built from source on the user's machine from a pinned tag.
+
+Odysseus
+    https://github.com/odysseus-dev/odysseus
+    GNU Affero General Public License v3.0 or later.
+    Installed and run unmodified from a pinned commit. PatterOS does not
+    modify, fork or re-host it, and does not make a modified version available
+    over a network.
+
+LACT (Linux AMDGPU Control Application)
+    https://github.com/ilya-zlobintsev/LACT
+    MIT License. Optional. Installed from the project's own released package.
+
+Gemma 4 model weights
+    https://huggingface.co/google  and  https://huggingface.co/unsloth
+    Apache License 2.0. Downloaded from Hugging Face at the user's choice.
+    Google publishes a separate Gemma Prohibited Use Policy, which is a policy
+    rather than a condition of the Apache 2.0 grant for Gemma 4.
+
+Hugging Face Hub client
+    https://github.com/huggingface/huggingface_hub
+    Apache License 2.0. Installed for the user to download models.
