@@ -1,4 +1,4 @@
-# Branding — All Rights Reserved
+# Branding, All Rights Reserved
 
 Copyright 2026 Daniel Parke. All rights reserved.
 

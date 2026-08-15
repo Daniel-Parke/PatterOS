@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  PatterOS · Local AI Budget Build — Part 2 companion installer
-#  setup_local_ai.sh  (v1.3)
+#  PatterOS · Local AI Budget Build · Part 2 companion installer
+#  install_local_ai.sh  (v1.4)
 #
 #  Automates EXACTLY what the Manual Setup Guide does, for people who would
 #  rather run a script than type the steps by hand:
@@ -12,18 +12,17 @@
 #    4. Build llama.cpp (CUDA on NVIDIA, Vulkan on AMD/Intel, CPU otherwise)
 #    5. Download a small model (or more) into ~/models
 #    6. Run llama.cpp in ROUTER MODE as a service (--models-dir, hot model
-#       swapping, no restart) — listening on localhost only, private by default
+#       swapping, no restart), listening on this computer only
 #    7. Install Odysseus (the web workspace) and run it as a service
 #    8. Turn on the firewall (SSH allowed first, so you can't lock yourself out)
 #
-#  This is the SIMPLE sibling of the full PatterOS install.sh: one model server,
-#  one workspace, no multi-GPU endpoints or extra tooling. The heavy PatterOS
-#  provisioning lives in the main install.sh.
+#  Everything is optional. Nothing here is installed unless you choose it, and
+#  every part can be removed again with uninstall_local_ai.sh.
 #
 #  USAGE
-#     less setup_local_ai.sh           # read it first — never blind-run a script
-#     sudo bash setup_local_ai.sh      # interactive
-#     sudo bash setup_local_ai.sh -y   # no prompts (express models)
+#     less install_local_ai.sh           # read it first, never blind-run a script
+#     sudo bash install_local_ai.sh      # interactive
+#     sudo bash install_local_ai.sh -y   # no prompts (express models)
 #
 #  FLAGS
 #     --full           Also download bigger models (needs a 24 GB card + disk).
@@ -35,19 +34,27 @@
 #     --skip-build     Reuse an existing llama.cpp build if one is present.
 #     --rebuild        Force a fresh llama.cpp build even if one exists.
 #     --skip-firewall  Don't enable or modify ufw.
+#     --replace-units  Overwrite service files even if you edited them by hand.
 #     --lact           Install LACT (GPU power/fan tuning GUI). Default on GPU rigs.
 #     --no-lact        Skip LACT.
 #     -y, --yes        Assume yes; don't prompt. Implies you've already read this
-#                      script — the habit below still applies!
+#                      script. The habit below still applies!
 #     -h, --help       Show this help.
 #
+#  SETTINGS you can pass as environment variables
+#     LLAMA_VERSION=<tag>  llama.cpp version to build   (default: a tested tag)
+#     CTX=<tokens>         context window per model     (default: 16384)
+#     NGL=<layers>         layers to put on the GPU     (default: automatic)
+#
 #  Re-running is safe AND smart: a healthy NVIDIA driver is never reinstalled,
-#  a finished build is reused, and the interactive menu lets you skip phases
-#  or customise ports, context size, model tier, LACT and the firewall.
+#  a finished build is reused, service files you edited yourself are kept, and
+#  the interactive menu lets you skip phases or customise ports, context size,
+#  model tier, LACT and the firewall.
 #
 #  FIRST, A HABIT WORTH KEEPING: never run a script from the internet (ours
 #  included) without looking inside it. The comments explain every phase:
-#      less setup_local_ai.sh        (press q to quit the viewer)
+#      less install_local_ai.sh        (press q to quit the viewer)
+# --- end of help ------------------------------------------------------------
 # =============================================================================
 set -Eeuo pipefail
 
@@ -115,7 +122,10 @@ TIER="express"; WANT_MODELS="yes"; WANT_ODY="yes"; FORCE_CPU="no"
 SKIP_UPGRADE="no"; SKIP_DRIVERS="no"; SKIP_BUILD="no"; REBUILD="no"; SKIP_FW="no"; YES="no"
 REPLACE_UNITS="no"   # overwrite systemd units even if they were edited by hand
 WANT_LACT="ask"      # ask = yes on GPU rigs unless changed at the menu
-show_help(){ sed -n '2,51p' "$0" | sed 's/^# \{0,1\}//'; }
+# Print the header block as help. Reads to a sentinel rather than a hard-coded
+# line number: the old `sed -n '2,51p'` silently truncated the help, or spilled
+# code into it, the moment anyone added or removed a line above.
+show_help(){ sed -n '2,/^# --- end of help/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
 while [[ $# -gt 0 ]]; do case "$1" in
   --full)        TIER="full";;
   --no-models)   WANT_MODELS="no";;
@@ -135,9 +145,9 @@ while [[ $# -gt 0 ]]; do case "$1" in
 esac; shift; done
 
 # ----- pre-flight -----------------------------------------------------------
-[[ ${EUID} -eq 0 ]] || die "Run with sudo:  sudo bash setup_local_ai.sh"
+[[ ${EUID} -eq 0 ]] || die "Run with sudo:  sudo bash install_local_ai.sh"
 REAL_USER="${SUDO_USER:-}"
-[[ -n "${REAL_USER}" && "${REAL_USER}" != "root" ]] || die "Run via sudo as your normal user:  sudo bash setup_local_ai.sh"
+[[ -n "${REAL_USER}" && "${REAL_USER}" != "root" ]] || die "Run via sudo as your normal user:  sudo bash install_local_ai.sh"
 USER_HOME="$(getent passwd "${REAL_USER}" | cut -d: -f6)"
 [[ -d "${USER_HOME}" ]] || die "Could not find the home directory for ${REAL_USER}."
 as_user(){ sudo -u "${REAL_USER}" -H "$@"; }     # run a command as the real user
@@ -149,8 +159,8 @@ ODY_DIR="${USER_HOME}/odysseus"
 
 echo -e "${C}${B}"
 echo "  ============================================================"
-echo "     PatterOS  —  Local AI Budget Build"
-echo "     Part 2 companion installer  ·  v1.3"
+echo "     PatterOS  ·  Local AI Budget Build"
+echo "     Part 2 companion installer  ·  v1.4"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo
@@ -162,17 +172,17 @@ echo "  tuning → a basic firewall. Hands-on testing and tweaking stays with yo
 echo "  exactly as the guide teaches it. Every phase is safe to re-run."
 echo
 echo -e "  ${B}One habit worth keeping for life${N}"
-echo "  Never run a script from the internet — ours included — without looking inside"
+echo "  Never run a script from the internet, ours included, without looking inside"
 echo "  it first. You don't need to be a programmer: open it with the command below,"
 echo "  and the plain-English comments will walk you through every phase."
 echo
-echo -e "      ${C}less setup_local_ai.sh${N}        (arrow keys to scroll, q to quit)"
+echo -e "      ${C}less install_local_ai.sh${N}        (arrow keys to scroll, q to quit)"
 echo
 if [[ "${YES}" != "yes" ]]; then
   read -r -p "  Happy you know what this script does, and ready to go? [y/N]: " a </dev/tty || true
   if [[ "${a,,}" != "y" && "${a,,}" != "yes" ]]; then
     echo
-    info "No problem at all — have a read and come back whenever. It'll be here."
+    info "No problem at all, have a read and come back whenever. It'll be here."
     exit 0
   fi
 else
@@ -460,11 +470,11 @@ else
   apt-get upgrade -y -qq || warn "System upgrade had issues; continuing."
   # Watchdog: an upgrade can replace NVIDIA driver files underneath the loaded
   # module. If the driver was healthy before this run and isn't now, ONE reboot
-  # fixes it — and phase 2 must NOT reinstall on top.
+  # fixes it, and phase 2 must NOT reinstall on top.
   if [[ "${VENDOR}" == "nvidia" && "${NV_BEFORE}" == "ok" ]] && [[ "$(nvidia_state)" != "ok" ]]; then
     NEED_REBOOT="yes"
     warn "The system upgrade replaced NVIDIA driver files; the loaded driver no longer matches."
-    info "Nothing is broken — one reboot reloads it. Phase 2 will leave the driver alone."
+    info "Nothing is broken, one reboot reloads it. Phase 2 will leave the driver alone."
   fi
 fi
 apt-get install -y -qq \
@@ -500,7 +510,7 @@ offer_reboot(){
   if [[ "${YES}" != "yes" ]]; then
     read -r -p "    Reboot now, then re-run this script (recommended)? [y/N]: " a </dev/tty || true
     if [[ "${a,,}" == "y" || "${a,,}" == "yes" ]]; then
-      info "After the reboot, run it again:  sudo bash setup_local_ai.sh"
+      info "After the reboot, run it again:  sudo bash install_local_ai.sh"
       info "It will see the healthy driver, leave it alone, and reuse anything already finished."
       sleep 3; systemctl reboot; exit 0
     fi
@@ -513,7 +523,7 @@ elif [[ "${VENDOR}" == "nvidia" ]]; then
   case "${NV_STATE}" in
     ok)
       gpuname="$(nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 || true)"
-      good "NVIDIA driver is loaded and healthy${gpuname:+ (${gpuname})} — leaving it completely alone."
+      good "NVIDIA driver is loaded and healthy${gpuname:+ (${gpuname})}, leaving it completely alone."
       ensure_cuda_toolkit
       ;;
     mismatch)
@@ -527,19 +537,19 @@ elif [[ "${VENDOR}" == "nvidia" ]]; then
     notloaded)
       NEED_REBOOT="yes"
       info "NVIDIA driver is installed but not loaded yet (normal before the first reboot)."
-      info "Not reinstalling — the files are already in place."
+      info "Not reinstalling, the files are already in place."
       ensure_cuda_toolkit
       secureboot_hint
       offer_reboot
       ;;
     missing|broken)
-      info "No working NVIDIA driver found (state: ${NV_STATE}) — installing driver + CUDA toolchain."
-      info "The driver only becomes active after a reboot — that's expected."
+      info "No working NVIDIA driver found (state: ${NV_STATE}), installing driver + CUDA toolchain."
+      info "The driver only becomes active after a reboot, that's expected."
       apt-get install -y -qq ubuntu-drivers-common || true
       command -v ubuntu-drivers >/dev/null 2>&1 && { ubuntu-drivers autoinstall || warn "ubuntu-drivers reported an issue; continuing."; }
       ensure_cuda_toolkit
       if [[ "$(nvidia_state)" == "ok" ]]; then
-        info "Driver loaded without a reboot — rare, but lovely."
+        info "Driver loaded without a reboot, rare, but lovely."
       else
         NEED_REBOOT="yes"
         warn "The NVIDIA driver only loads after a reboot."
@@ -572,7 +582,7 @@ good "Drivers / toolchains ready."
 
 # ======================================================================== 3 ==
 step "3/9  Building llama.cpp (${LLAMA_VERSION})"
-info "Compiling the inference engine from source — the slow part (a few minutes)."
+info "Compiling the inference engine from source, the slow part (a few minutes)."
 if [[ ! -d "${LLAMA_DIR}/.git" ]]; then
   if [[ "${LLAMA_VERSION}" == "master" ]]; then as_user git clone --depth 1 "${LLAMA_REPO}" "${LLAMA_DIR}"
   else as_user git clone --depth 1 --branch "${LLAMA_VERSION}" "${LLAMA_REPO}" "${LLAMA_DIR}" \
@@ -594,7 +604,7 @@ BUILT=""
 EXISTING=""; [[ -x "${LLAMA_DIR}/build/bin/llama-server" && -f "${MARKER}" ]] && EXISTING="$(cut -d' ' -f1 "${MARKER}" 2>/dev/null || true)"
 if [[ "${REBUILD}" != "yes" && -n "${EXISTING}" && "${EXISTING}" == "${DESIRED}" ]]; then
   BUILT="${EXISTING}"
-  good "Engine already built (${BUILT}) — reusing it. Use --rebuild to force a fresh build."
+  good "Engine already built (${BUILT}), reusing it. Use --rebuild to force a fresh build."
   if grep -q 'all-major' "${MARKER}" 2>/dev/null && [[ "$(nvidia_state)" == "ok" ]]; then
     info "(It was built generically pre-reboot; '--rebuild' would optimise for your exact card. Optional.)"
   fi
@@ -602,7 +612,7 @@ elif [[ "${REBUILD}" != "yes" && "${SKIP_BUILD}" == "yes" && -n "${EXISTING}" ]]
   BUILT="${EXISTING}"
   warn "Reusing the existing ${BUILT} build (--skip-build), though ${DESIRED} is what this machine wants."
 elif [[ -n "${EXISTING}" && "${EXISTING}" != "${DESIRED}" ]]; then
-  info "Existing build is ${EXISTING} but this machine now wants ${DESIRED} — rebuilding."
+  info "Existing build is ${EXISTING} but this machine now wants ${DESIRED}, rebuilding."
 fi
 if [[ -z "${BUILT}" ]] && [[ "${VENDOR}" == "nvidia" ]] && command -v nvcc >/dev/null 2>&1; then
   archs="all-major"   # works even before the driver loads
@@ -813,7 +823,7 @@ good "Service installed and enabled on boot."
 # quick readiness check (don't fail the install if it's still loading / pre-reboot)
 sleep 3
 if curl -fsS "http://127.0.0.1:${PORT_LLAMA}/v1/models" >/dev/null 2>&1; then good "Server is answering on http://localhost:${PORT_LLAMA}/v1"
-else info "Server not answering yet — normal if a model is loading, or before the NVIDIA reboot."; fi
+else info "Server not answering yet, normal if a model is loading, or before the NVIDIA reboot."; fi
 
 # ======================================================================== 6 ==
 ODY_PW=""; ODY_PW_SET="no"; ODY_PW_FILE=""
@@ -894,23 +904,23 @@ else
 fi
 
 # ======================================================================== 7 ==
-step "7/9  LACT — GPU power & fan tuning (optional)"
+step "7/9  LACT, GPU power & fan tuning (optional)"
 if [[ "${VENDOR}" == "cpu" ]]; then
-  info "No GPU on this machine — nothing to tune. Skipping."
+  info "No GPU on this machine, nothing to tune. Skipping."
 elif [[ "${WANT_LACT}" != "yes" ]]; then
   info "Skipping LACT (not selected). The manual route lives in the guide, Step 12."
 elif dpkg -l lact 2>/dev/null | grep -q '^ii'; then
   good "LACT is already installed."
   systemctl enable --now lactd >/dev/null 2>&1 || true
 else
-  info "Installing LACT ${LACT_VER} — the GUI we use on every rig to cap power and tame fans."
+  info "Installing LACT ${LACT_VER}, the GUI we use on every rig to cap power and tame fans."
   as_user mkdir -p "${USER_HOME}/Downloads"
   if as_user wget -q -O "${USER_HOME}/Downloads/lact.deb" "${LACT_DEB_URL}" \
      && apt-get install -y -qq "${USER_HOME}/Downloads/lact.deb"; then
     systemctl enable --now lactd >/dev/null 2>&1 || warn "lactd didn't start; settings won't apply until it does."
-    good "LACT installed. Open it from your applications menu — the guide (Step 12) shows the two-minute setup."
+    good "LACT installed. Open it from your applications menu, the guide (Step 12) shows the two-minute setup."
   else
-    warn "LACT install failed (network or packaging). No harm done — everything else is unaffected."
+    warn "LACT install failed (network or packaging). No harm done, everything else is unaffected."
     warn "Easy fallbacks: Software Manager → search 'LACT', or the manual route in the guide, Step 12."
   fi
 fi
@@ -951,7 +961,7 @@ info "Phone access to Odysseus:           guide, Step 11  (allow ${PORT_ODY}/tcp
 info "Other apps/machines (Cursor etc.):  guide, Step 10  (allow ${PORT_LLAMA}/tcp + --api-key)"
 fi
 
-# ======================================================================== 8 ==
+# ======================================================================== 9 ==
 step "9/9  Done"
 PRIMARY_IP="$(hostname -I 2>/dev/null | awk '{print $1}' || true)"; [[ -n "${PRIMARY_IP}" ]] || PRIMARY_IP="<this-machine-ip>"
 apt-get autoremove -y -qq >/dev/null 2>&1 || true
@@ -962,13 +972,13 @@ echo -e "==============================================================${N}"
 GPU_VERDICT="CPU only (by design)"
 if [[ "${BUILT}" == "cuda" ]]; then
   case "$(nvidia_state)" in
-    ok) GPU_VERDICT="CUDA — driver healthy, GPU active" ;;
-    mismatch|notloaded) GPU_VERDICT="CUDA built — GPU returns after ONE reboot (do not reinstall drivers)" ;;
-    *) GPU_VERDICT="CUDA built — driver not working; see the phase 2 notes above" ;;
+    ok) GPU_VERDICT="CUDA, driver healthy, GPU active" ;;
+    mismatch|notloaded) GPU_VERDICT="CUDA built, GPU returns after ONE reboot (do not reinstall drivers)" ;;
+    *) GPU_VERDICT="CUDA built, driver not working; see the phase 2 notes above" ;;
   esac
 elif [[ "${BUILT}" == "vulkan" ]]; then
-  if vulkaninfo --summary 2>/dev/null | grep -q deviceName; then GPU_VERDICT="Vulkan — GPU visible and active"
-  else GPU_VERDICT="Vulkan built — GPU not visible yet (groups fixed this run; restart the service or reboot)"; fi
+  if vulkaninfo --summary 2>/dev/null | grep -q deviceName; then GPU_VERDICT="Vulkan, GPU visible and active"
+  else GPU_VERDICT="Vulkan built, GPU not visible yet (groups fixed this run; restart the service or reboot)"; fi
 fi
 echo "  Model server:  http://localhost:${PORT_LLAMA}/v1   (engine: ${BUILT})"
 echo "  GPU status:    ${GPU_VERDICT}"
@@ -990,8 +1000,8 @@ if [[ "${NEED_REBOOT}" == "yes" ]]; then
 fi
 if [[ "${VENDOR}" != "cpu" ]]; then
   if dpkg -l lact 2>/dev/null | grep -q '^ii'; then
-    echo "  LACT:          installed — open it from your menu and set a power cap (guide, Step 12)."
+    echo "  LACT:          installed, open it from your menu and set a power cap (guide, Step 12)."
   else
-    echo "  LACT:          not installed — Software Manager or the guide, Step 12, when you want it."
+    echo "  LACT:          not installed, Software Manager or the guide, Step 12, when you want it."
   fi
 fi

@@ -1,1 +1,9 @@
+# Internal strategy document. Deliberately not published; the README must not
+# link to it either.
 PatterOS Vision - Operation Level Playing Field.md
+
+# Raw YouTube caption exports, used only as source material for the writing
+# voice skill. Auto-generated captions misrender speech, so they are working
+# material rather than documentation, and they are removed once the skill is
+# built.
+docs/youtube_transcripts/

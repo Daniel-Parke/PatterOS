@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 # =============================================================================
-#  PatterOS · Local AI Budget Build — Part 2 uninstaller / reset
-#  uninstall_local_ai.sh  (v1.2)
+#  PatterOS · Local AI Budget Build, Part 2 uninstaller / reset
+#  uninstall_local_ai.sh  (v1.4)
 #
-#  The exact inverse of setup_local_ai.sh. Use it to wipe a rig back to a
-#  clean state between test runs, so a fresh `setup_local_ai.sh` starts clean.
+#  The exact inverse of install_local_ai.sh. Use it to wipe a rig back to a
+#  clean state between test runs, so a fresh `install_local_ai.sh` starts clean.
 #
-#  WHAT IT REMOVES BY DEFAULT (safe reset — enough to re-run the installer):
+#  WHAT IT REMOVES BY DEFAULT (safe reset, enough to re-run the installer):
 #     - the llama.service and odysseus.service systemd units (stopped first)
 #     - ~/llama.cpp        (the clone and the compiled build/)
 #     - ~/odysseus         (the clone, its venv, and its local data)
 #
 #  WHAT IT KEEPS BY DEFAULT (so a re-test is fast and nothing else breaks):
-#     - ~/models           (re-downloading big GGUFs is slow — keep unless --models)
+#     - ~/models           (re-downloading big GGUFs is slow, keep unless --models)
 #     - apt packages, GPU drivers/CUDA, the firewall  (shared with the rest of
 #       the system; only removed when you ask for it with the flags below)
 #
@@ -26,7 +26,7 @@
 #     --models      Also delete ~/models (every downloaded GGUF).
 #     --packages    Also purge the build/Vulkan extras this project installed
 #                   (tmux, Vulkan dev libs/tools). Keeps core tools like git,
-#                   curl, cmake, build-essential, python3 — they're shared.
+#                   curl, cmake, build-essential, python3, they're shared.
 #     --drivers     Also purge the NVIDIA driver + CUDA toolkit + gcc-12/g++-12.
 #                   Heavy; needs a reboot afterwards.
 #     --firewall    Also disable ufw (returns it to the OS default; SSH stays
@@ -38,8 +38,9 @@
 #     -h, --help    Show this help.
 #
 #  Safe to run repeatedly and safe to run on a rig where setup only got halfway.
+# --- end of help ------------------------------------------------------------
 # =============================================================================
-set -uo pipefail   # NOTE: no -e — an uninstaller must keep going if a step is a no-op
+set -uo pipefail   # NOTE: no -e, an uninstaller must keep going if a step is a no-op
 
 # ----- pretty output --------------------------------------------------------
 if [[ -t 1 ]]; then
@@ -62,12 +63,15 @@ PORT_LLAMA=8020
 PORT_ODY=7000
 # Build/Vulkan extras the installer added FOR THIS PROJECT (safe to purge).
 # Core tools (git curl wget cmake build-essential python3-* pciutils ufw) are
-# deliberately NOT here — they are commonly shared and risky to remove.
+# deliberately NOT here, they are commonly shared and risky to remove.
 PURGE_EXTRAS=(tmux libvulkan-dev glslc spirv-headers vulkan-tools mesa-vulkan-drivers libcurl4-openssl-dev)
 
 # ----- args -----------------------------------------------------------------
 DO_MODELS="no"; DO_PKGS="no"; DO_DRIVERS="no"; DO_FW="no"; DO_LACT="no"; DRY="no"; YES="no"
-show_help(){ sed -n '2,41p' "$0" | sed 's/^# \{0,1\}//'; }
+# Reads to a sentinel, not a hard-coded line number. See the matching note in
+# install_local_ai.sh: counting lines meant any header edit silently truncated
+# the help or leaked code into it.
+show_help(){ sed -n '2,/^# --- end of help/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --models)   DO_MODELS="yes";;
@@ -128,16 +132,16 @@ safe_rm(){
 
 echo -e "${C}${B}"
 echo "  ============================================================"
-echo "     PatterOS  —  Local AI Budget Build"
-echo "     Part 2 uninstaller / reset  ·  v1.2"
+echo "     PatterOS  ·  Local AI Budget Build"
+echo "     Part 2 uninstaller / reset  ·  v1.4"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo
-info "As with any script — ours included — have a look inside before you run it:"
+info "As with any script, ours included, have a look inside before you run it:"
 echo -e "      ${C}less $(basename "$0")${N}        (arrow keys to scroll, q to quit)"
 echo
 info "User: ${REAL_USER}   Home: ${USER_HOME}"
-[[ "${DRY}" == "yes" ]] && warn "DRY RUN — nothing will actually be changed."
+[[ "${DRY}" == "yes" ]] && warn "DRY RUN, nothing will actually be changed."
 
 # ----- plan + confirm -------------------------------------------------------
 echo
@@ -315,7 +319,7 @@ echo "  Removed:   services + ${LLAMA_DIR} + ${ODY_DIR}"
 [[ "${DO_DRIVERS}" == "yes" ]] && echo "             + NVIDIA/CUDA stack"
 echo
 echo "  Left alone: huggingface_hub (per-user pip), any models you kept, core tools."
-echo "  You can now re-run a clean install:  sudo bash setup_local_ai.sh"
+echo "  You can now re-run a clean install:  sudo bash install_local_ai.sh"
 if [[ "${NEED_REBOOT}" == "yes" ]]; then
   echo -e "${WN}  Reboot before re-installing so the old driver fully unloads:  sudo reboot${N}"
 fi
