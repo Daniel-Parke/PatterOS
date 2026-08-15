@@ -1,1 +1,13 @@
+# Internal strategy document. Deliberately not published; the README must not
+# link to it either.
 PatterOS Vision - Operation Level Playing Field.md
+
+# Raw YouTube caption exports. These were used once as source material for the
+# writing voice skill and then deleted. The entry stays as a guard: auto-generated
+# captions misrender speech badly, so they are working material and should never
+# be published as if they were documentation.
+docs/youtube_transcripts/
+
+# Backups produced by tools/patch_part1_docx.py. Git already holds the
+# previous version, so these are never committed.
+*.bak

@@ -1,0 +1,27 @@
+name: The guide is wrong or unclear
+description: Something in the documentation does not match reality, or did not make sense
+labels: ["documentation"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Drift between the guides and the scripts is a real bug, not a cosmetic
+        one, so this is genuinely useful to report.
+
+  - type: input
+    id: where
+    attributes:
+      label: Where?
+      placeholder: "docs/part-2-manual-setup-guide.md, Step 6"
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What is wrong, or what confused you?
+      description: >
+        "This does not match what the script does" and "I could not understand
+        this" are both worth reporting. The second one is arguably more useful.
+    validations:
+      required: true

@@ -1,0 +1,32 @@
+# https://editorconfig.org
+# Keeps line endings and indentation consistent regardless of who is editing,
+# which matters here because the project is maintained from Windows and the
+# scripts run on Linux.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 2
+
+[*.sh]
+indent_size = 2
+
+[*.py]
+indent_size = 4
+
+[*.md]
+# Two trailing spaces are a hard line break in Markdown.
+trim_trailing_whitespace = false
+
+[Makefile]
+indent_style = tab
+
+[*.{docx,pdf,png,jpg,zip,gguf}]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset
