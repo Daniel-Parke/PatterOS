@@ -337,6 +337,71 @@ case "${VENDOR}" in
   cpu)    info "No GPU detected (or --cpu) → Path C (CPU only). 1 tok/s beats 0.";;
 esac
 
+# ----- what we think your machine is, and one honest warning ----------------
+# Shown once, before anything is changed. Two jobs: let the user catch a wrong
+# detection while it is still free to do so, and be straight with them that the
+# driver step is the one part that carries real risk. Written to inform, not to
+# frighten, and short enough that people actually read it.
+hardware_summary(){
+  local cpu ram disk gpu
+  cpu="$(awk -F': ' '/^model name/{print $2; exit}' /proc/cpuinfo 2>/dev/null || true)"
+  [[ -z "${cpu}" ]] && cpu="unknown"
+  ram="$(awk '/^MemTotal:/{printf "%.0f", $2/1024/1024}' /proc/meminfo 2>/dev/null || true)"
+  disk="$(free_gb "${USER_HOME}")"
+  case "${VENDOR}" in
+    nvidia) gpu="$(LC_ALL=C nvidia-smi --query-gpu=name --format=csv,noheader 2>/dev/null | head -1 || true)";;
+    amd|intel) gpu="$(LC_ALL=C lspci 2>/dev/null | grep -iE 'vga|3d|display' | sed 's/.*: //' | head -1 || true)";;
+    *) gpu="";;
+  esac
+  if [[ -z "${gpu}" ]]; then
+    if [[ "${FORCE_CPU}" == "yes" ]]; then gpu="ignoring any graphics card (--cpu), using the processor"
+    else gpu="none found, so the processor will do the work"; fi
+  fi
+
+  echo
+  echo -e "  ${B}Before we start${N}"
+  echo
+  echo "  PatterOS has had a look at your computer and thinks it has:"
+  echo
+  echo "      Processor:  ${cpu}"
+  echo "      Graphics:   ${gpu}"
+  echo "      Memory:     ${ram:-?} GB"
+  echo "      Free disk:  ${disk:-?} GB in ${USER_HOME}"
+  echo
+  echo "  Please check that looks right, because everything that follows is based on it."
+  echo
+  if [[ "${SKIP_DRIVERS}" == "yes" ]]; then
+    echo "  This installer will update your system. You have asked it to leave graphics"
+    echo "  drivers alone, so it will not touch them."
+  else
+    echo "  This installer will update your system, and on some machines it installs"
+    echo "  graphics drivers. That driver step is the one part that carries real risk:"
+    echo "  it very rarely goes wrong, but when it does it can mean reinstalling the"
+    echo "  system. Please do not run this on a computer you cannot be without for an"
+    echo "  evening."
+  fi
+  echo
+  echo "  Everything here is optional. You choose what gets installed, nothing has been"
+  echo "  changed yet, and you can stop now or at any prompt. If you change your mind"
+  echo "  later, uninstall_local_ai.sh puts things back."
+  echo
+  return 0
+}
+
+hardware_summary
+if [[ "${YES}" != "yes" ]]; then
+  read -r -p "  Does that look like your computer, and are you happy to continue? [y/N]: " a </dev/tty || true
+  if [[ "${a,,}" != "y" && "${a,,}" != "yes" ]]; then
+    echo
+    info "Stopping here, and nothing has been changed."
+    info "If the hardware above looked wrong, that is worth telling us about:"
+    info "https://github.com/Daniel-Parke/PatterOS/issues"
+    exit 0
+  fi
+else
+  info "(-y given: continuing without asking you to confirm the hardware above.)"
+fi
+
 # ----- plan + interactive menu ----------------------------------------------
 # Sensible defaults; LACT defaults to yes on GPU rigs (it's our standard tool).
 if [[ "${WANT_LACT}" == "ask" ]]; then

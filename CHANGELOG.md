@@ -71,6 +71,11 @@ shipping, and two of them could cost you an evening.
 
 ### Added
 
+- A short hardware check before anything is changed. PatterOS shows what it
+  thinks your processor, graphics card, memory and free disk are, and asks you
+  to confirm it looks right. It also says plainly that the driver step is the
+  one part carrying real risk, and that nothing has been changed yet. Skipped
+  with `-y`.
 - Resizable BAR, Mesa version and Vulkan driver checks on AMD and Intel. A
   disabled Resizable BAR roughly halves speed and looks like nothing is wrong;
   PatterOS now detects it, works around it and tells you the real fix.
