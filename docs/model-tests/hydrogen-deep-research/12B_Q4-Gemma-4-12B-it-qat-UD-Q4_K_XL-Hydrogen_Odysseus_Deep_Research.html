@@ -1,0 +1,1045 @@
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Report: Efficient Solar-to-Hydrogen Conversion for Closed-Loop Systems</title>
+<meta name="description" content="Executive Summary
+This report investigates the most efficient and feasible methods for converting excess solar energy into hydrogen gas for a closed-loop stora">
+<meta property="og:title" content="Research Report: Efficient Solar-to-Hydrogen Conversion for Closed-Loop Systems">
+<meta property="og:description" content="Executive Summary
+This report investigates the most efficient and feasible methods for converting excess solar energy into hydrogen gas for a closed-loop stora">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41560-023-01247-2/MediaObjects/41560_2023_1247_Fig1_HTML.png">
+<meta name="theme-color" content="#b8543a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131214" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='75' font-size='75'&gt;O&lt;/text&gt;&lt;/svg&gt;">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --bg: #fbf9f4;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1ede4;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1817;
+  --text-dim: #5a5651;
+  --text-muted: #8a8580;
+  --accent: #b8543a;
+  --accent-light: #d97a5e;
+  --accent-bg: rgba(184,84,58,0.06);
+  --gold: #c9952e;
+  --gold-bg: rgba(201,149,46,0.09);
+  --aurora-a: rgba(184,84,58,0.10);
+  --aurora-b: rgba(201,149,46,0.08);
+  --aurora-c: rgba(64,98,128,0.07);
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+  --max-w: 760px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131214; --bg-surface: #1c1a1e; --bg-surface-alt: #25232a;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.16);
+    --text: #ece8e2; --text-dim: #a8a39c; --text-muted: #6f6b66;
+    --accent: #e88f73; --accent-light: #f4ad95; --accent-bg: rgba(232,143,115,0.09);
+    --gold: #e8c05a; --gold-bg: rgba(232,192,90,0.09);
+    --aurora-a: rgba(232,143,115,0.13);
+    --aurora-b: rgba(232,192,90,0.09);
+    --aurora-c: rgba(125,180,224,0.10);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 28px rgba(0,0,0,0.55);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Give smooth-scroll some breathing room so anchors land below the
+     fixed toolbar instead of being shoved straight under it. */
+  scroll-padding-top: 4rem;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Aurora background ─────────────────────────────────
+   Slowly-drifting layered blobs in the accent palette. Sits behind
+   the content, fixed to the viewport so scrolling doesn't reset the
+   composition. Subtle grain on top stops it reading as 'flat CSS'. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -20vw;
+  z-index: -2;
+  background:
+    radial-gradient(40vw 50vh at 18% 22%, var(--aurora-a) 0%, transparent 60%),
+    radial-gradient(45vw 55vh at 82% 12%, var(--aurora-b) 0%, transparent 65%),
+    radial-gradient(55vw 60vh at 50% 88%, var(--aurora-c) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Subtle film-grain — SVG turbulence baked to a data-URL. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,0,0) scale(1);     }
+  50%  { transform: translate3d(2vw,-1vh,0) scale(1.04); }
+  100% { transform: translate3d(-1vw,1.5vh,0) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* ── Toolbar (top-right) ──────────────────────────── */
+.toolbar {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.toolbar:hover { opacity: 1; }
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s;
+  position: relative;
+}
+.toolbar button:hover { background: var(--bg-surface-alt); }
+.toolbar button svg { width: 14px; height: 14px; flex-shrink: 0; }
+.toolbar .toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--text);
+  color: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.toolbar .toast.show { opacity: 1; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-width: 140px;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu button:hover { background: var(--bg-surface-alt); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: transparent;
+  color: var(--text);
+  padding: 5.5rem 2rem 2.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* A hair-thin gradient hairline divider under the hero to anchor it
+   without putting it on a heavy boxed background. */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: min(60%, 320px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.hero-label {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-body);
+}
+.hero h1 {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 120, 'SOFT' 50;
+  line-height: 1.15;
+  max-width: 720px;
+  margin: 0 auto;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Hero image ───────────────────────────────────── */
+.hero-image {
+  max-width: var(--max-w);
+  margin: -2rem auto 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 2rem;
+}
+.hero-image img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  display: block;
+}
+
+/* ── Section images ───────────────────────────────── */
+.section-image {
+  margin: 1.5rem 0;
+  position: relative;
+}
+.section-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ── Per-image hide button ────────────────────────────
+   A small X that appears on hover (or always on touch) so users can
+   remove irrelevant OG images. Click POSTs the URL to the backend so
+   the next render skips it. */
+.img-hide-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-hide-btn { top: 14px; right: 2.5rem; }
+/* Reroll sits just to the left of the hide button. */
+.img-reroll-btn {
+  position: absolute;
+  top: 10px; right: 46px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-reroll-btn { top: 14px; right: calc(2.5rem + 36px); }
+.section-image:hover .img-hide-btn,
+.section-image:hover .img-reroll-btn,
+.hero-image:hover .img-hide-btn,
+.hero-image:hover .img-reroll-btn { opacity: 1; }
+.img-hide-btn:hover { background: var(--accent); }
+.img-reroll-btn:hover { background: var(--accent); }
+.img-hide-btn:active,
+.img-reroll-btn:active { transform: scale(0.92); }
+.img-reroll-btn.spinning svg { animation: img-reroll-spin 0.6s linear infinite; }
+.img-reroll-btn:disabled { display: none; }
+@keyframes img-reroll-spin { to { transform: rotate(360deg); } }
+@media (hover: none) {
+  /* Touch devices have no hover — show the buttons at low opacity always. */
+  .img-hide-btn, .img-reroll-btn { opacity: 0.7; }
+}
+.section-image.fading,
+.hero-image.fading {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* ── Stats bar ─────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.stat { display: flex; align-items: center; gap: 0.35rem; }
+.stat-value { font-weight: 600; color: var(--text); }
+
+/* ── Layout ────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: calc(var(--max-w) + 260px);
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+}
+
+/* ── TOC sidebar ───────────────────────────────────── */
+.toc-sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 3.2rem 0.8rem 2rem 1.4rem;
+  border-right: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.toc-sidebar nav { position: relative; }
+.toc-sidebar nav a {
+  position: relative;
+  display: block;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 0.42rem 0.7rem 0.42rem 0.85rem;
+  margin: 1px 0;
+  border-radius: 6px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  transition: color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+/* Sliding accent indicator on the left edge of each TOC link */
+.toc-sidebar nav a::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2px; height: 0;
+  background: var(--accent);
+  transform: translateY(-50%);
+  border-radius: 1px;
+  transition: height 0.18s ease, opacity 0.18s ease;
+  opacity: 0;
+}
+.toc-sidebar nav a:hover {
+  color: var(--text);
+  background: var(--accent-bg);
+  padding-left: 1rem;
+}
+.toc-sidebar nav a:hover::before {
+  height: 60%;
+  opacity: 1;
+}
+.toc-sidebar nav a.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-bg);
+}
+.toc-sidebar nav a.active::before {
+  height: 80%;
+  opacity: 1;
+}
+.toc-sidebar nav a.depth-3 {
+  padding-left: 1.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.toc-sidebar nav a.depth-3:hover { padding-left: 1.45rem; }
+
+/* ── Content ───────────────────────────────────────── */
+.content { max-width: var(--max-w); padding: 3rem 2.5rem 4rem; }
+
+/* Display headings — Fraunces optical-size driven so they get more
+   contrast and personality at the larger end. */
+.content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent) 0%, transparent 65%) 1;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text);
+}
+.content h2:first-child { margin-top: 0; }
+.content h3 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 32;
+  margin: 2.2rem 0 0.6rem;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.content h4 {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin: 1.6rem 0 0.5rem;
+}
+.content p { margin-bottom: 1.1rem; hanging-punctuation: first last; }
+
+/* Drop cap on the very first paragraph of the body — old-school editorial
+   touch that anchors the reader. */
+.content > p:first-of-type::first-letter,
+.content > h2:first-child + p::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+  font-size: 3.6em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.15em 0.12em 0 -0.04em;
+  color: var(--accent);
+}
+
+.content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+.content a:hover {
+  text-decoration-color: var(--accent);
+  color: var(--accent-light);
+}
+.content ul, .content ol { margin: 0 0 1.1rem 1.6rem; }
+.content li { margin-bottom: 0.4rem; }
+.content li::marker { color: var(--accent); }
+.content li > ul, .content li > ol { margin-top: 0.4rem; margin-bottom: 0; }
+.content blockquote {
+  position: relative;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-bg);
+  padding: 1.1rem 1.4rem 1.1rem 2.6rem;
+  margin: 1.5rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.content blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.5rem; top: 0.3rem;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-style: normal;
+  color: var(--gold);
+  opacity: 0.5;
+  line-height: 1;
+}
+.content hr { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 2rem 0; }
+.content code { font-family: var(--font-mono); font-size: 0.86em; background: var(--bg-surface-alt); padding: 0.15em 0.4em; border-radius: 4px; }
+.content pre { background: var(--bg-surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.25rem 0; font-size: 0.86rem; line-height: 1.6; }
+.content pre code { background: none; padding: 0; }
+.content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.9rem; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.content th { text-align: left; padding: 0.7rem 1rem; background: var(--accent-bg); font-weight: 600; border-bottom: 2px solid var(--border-strong); }
+.content td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.content tr:last-child td { border-bottom: none; }
+.content tr:hover td { background: var(--accent-bg); }
+
+/* ── Sources (collapsible list) ───────────────────── */
+.sources-panel { margin-top: 3rem; border-top: 2px solid var(--border); padding-top: 1.5rem; }
+.sources-panel details { margin: 0; }
+.sources-panel summary {
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; font-size: 1rem; font-weight: 600;
+  color: var(--text); padding: 0.5rem 0; list-style: none;
+  user-select: none;
+}
+.sources-panel summary::-webkit-details-marker { display: none; }
+.sources-panel summary::before {
+  content: '\25B6'; font-size: 0.65em; color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.sources-panel details[open] summary::before { transform: rotate(90deg); }
+.sources-list { padding: 0.5rem 0 0 0.25rem; }
+.sources-list a {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.35rem 0; font-size: 0.85rem;
+  color: var(--text); text-decoration: none;
+  transition: color 0.15s;
+}
+.sources-list a:hover { color: var(--accent); }
+.sources-list .snum {
+  color: var(--text-muted); font-size: 0.75rem;
+  min-width: 1.5rem; text-align: right; flex-shrink: 0;
+}
+.sources-list .sdomain {
+  color: var(--text-muted); font-size: 0.75rem;
+  margin-left: auto; flex-shrink: 0;
+}
+
+/* ── Chat-about CTA ────────────────────────────────── */
+.chat-cta {
+  margin: 3rem 0 1rem; padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface);
+}
+.chat-cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; font-size: 0.95rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.15s, transform 0.05s;
+}
+.chat-cta-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.chat-cta-btn:active:not(:disabled) { transform: translateY(1px); }
+.chat-cta-btn:disabled { opacity: 0.6; cursor: progress; }
+.chat-cta-hint {
+  margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.report-footer {
+  text-align: center; padding: 2rem; font-size: 0.75rem;
+  color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 2rem;
+}
+
+/* ── Animations ────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .content h2, .content h3, .content p, .content ul, .content ol,
+  .content blockquote, .content table, .content pre, .section-image {
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ── Print ─────────────────────────────────────────── */
+@media print {
+  .toc-sidebar, .toolbar { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+</style>
+</head>
+<body class="">
+
+<!-- Toolbar: Export + Restore hidden images -->
+<div class="toolbar">
+  
+  <div class="dropdown">
+    <button id="btn-export" title="Export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export ▾
+    </button>
+    <div class="dropdown-menu" id="export-menu">
+      <button id="btn-pdf">Save as PDF</button>
+      <button id="btn-html">Download HTML</button>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-label">Odysseus — Deep Research Report</div>
+  <h1>Research Report: Efficient Solar-to-Hydrogen Conversion for Closed-Loop Systems</h1>
+</div>
+
+<div class="hero-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41560-023-01247-2/MediaObjects/41560_2023_1247_Fig1_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41560-023-01247-2/MediaObjects/41560_2023_1247_Fig1_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-value">278.1s</span> Duration</div>
+  <div class="stat"><span class="stat-value">5</span> Rounds</div>
+  <div class="stat"><span class="stat-value">16</span> Queries</div>
+  <div class="stat"><span class="stat-value">28</span> URLs Analyzed</div>
+  <div class="stat"><span class="stat-value">gemma-4-12B-it-qat-UD-Q4_K_XL</span> Model</div>
+  <div class="stat"><span class="stat-value">duckduckgo</span> Search</div>
+</div>
+
+<div class="layout">
+  <aside class="toc-sidebar">
+    <nav>
+      <a href="#executive-summary" class="depth-2">Executive Summary</a>
+      <a href="#introduction-the-hydrogen-economy-in-a-backyard-setting" class="depth-2">Introduction: The Hydrogen Economy in a Backyard Setting</a>
+      <a href="#the-physics-of-efficiency-understanding-round-trip-efficiency-rte" class="depth-2">The Physics of Efficiency: Understanding Round-Trip Efficiency (RTE)</a>
+      <a href="#pathway-1-electrical-pathways-the-diy-standard" class="depth-2">Pathway 1: Electrical Pathways (The DIY Standard)</a>
+      <a href="#the-modular-buffered-architecture" class="depth-3">The Modular Buffered Architecture</a>
+      <a href="#the-converter-less-architecture-hardware-optimization" class="depth-3">The Converter-less Architecture (Hardware Optimization)</a>
+      <a href="#alkaline-electrolysis-framework" class="depth-3">Alkaline Electrolysis Framework</a>
+      <a href="#pathway-2-thermally-integrated-pathways-high-performance" class="depth-2">Pathway 2: Thermally Integrated Pathways (High-Performance)</a>
+      <a href="#thermally-integrated-parabolic-dish-pem" class="depth-3">Thermally Integrated Parabolic Dish &amp; PEM</a>
+      <a href="#why-solid-oxide-electrolysis-soe-is-not-garage-buildable" class="depth-3">Why Solid Oxide Electrolysis (SOE) is Not Garage-Buildable</a>
+      <a href="#pathway-3-advanced-thermochemical-pathways-industrial-scale" class="depth-2">Pathway 3: Advanced Thermochemical Pathways (Industrial Scale)</a>
+      <a href="#comparative-analysis-choosing-the-right-path" class="depth-2">Comparative Analysis: Choosing the Right Path</a>
+      <a href="#the-case-for-alkaline-electrolysis" class="depth-3">The Case for Alkaline Electrolysis</a>
+      <a href="#the-case-for-the-converter-less-architecture" class="depth-3">The Case for the Converter-less Architecture</a>
+      <a href="#conclusion-the-recommended-build-strategy" class="depth-2">Conclusion: The Recommended Build Strategy</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <h2 id="executive-summary">Executive Summary</h2>
+<p>This report investigates the most efficient and feasible methods for converting excess solar energy into hydrogen gas for a closed-loop storage and utilization system. For a project constrained to a garage environment using off-the-shelf components, the research identifies three primary pathways: the <strong>Practical Modular Path</strong> (PV $\rightarrow$ Battery $\rightarrow$ Electrolyzer), the <strong>High-Efficiency Alkaline Path</strong> (PV $\rightarrow$ DC-DC Converter $\rightarrow$ Alkaline Electrolyzer), and the <strong>Hardware-Optimized Converter-less Path</strong> (PV $\rightarrow$ Dynamic Cell Switching $\rightarrow$ Electrolyzer). While high-temperature thermochemical cycles and Solid Oxide Electrolysis (SOE) offer superior theoretical efficiencies, they are excluded from this report due to their industrial-scale requirements. The report concludes that the <strong>Alkaline Electrolysis framework</strong> paired with specific DC-DC topologies offers the best balance of high electrical efficiency (up to 82%) and component availability for a DIY build.</p>
+<hr>
+<h2 id="introduction-the-hydrogen-economy-in-a-backyard-setting">Introduction: The Hydrogen Economy in a Backyard Setting</h2>
+<figure class="section-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs42247-024-00697-y/MediaObjects/42247_2024_697_Fig1_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs42247-024-00697-y/MediaObjects/42247_2024_697_Fig1_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The transition toward renewable energy is often hindered by the "intermittency problem"—the sun does not always shine when energy is needed. Hydrogen gas has emerged as a premier candidate for long-duration energy storage because it can be produced, stored in large quantities, and converted back into electricity with high versatility. A "closed-loop" system refers to a complete cycle where solar energy is captured, converted into hydrogen, stored, and then converted back into electricity via a fuel cell to power a load.</p>
+<p>For the hobbyist or small-scale engineer, the challenge lies in balancing <strong>Round-Trip Efficiency (RTE)</strong> with <strong>buildability</strong>. Every stage of conversion—from photons to electrons, electrons to chemical bonds, and chemical bonds back to electrons—incurs energy losses. To build a viable system in a garage, one must select components that minimize these losses while remaining accessible through standard retail or industrial supply chains.</p>
+<h2 id="the-physics-of-efficiency-understanding-round-trip-efficiency-rte">The Physics of Efficiency: Understanding Round-Trip Efficiency (RTE)</h2>
+<p>Before selecting a hardware path, it is vital to understand the primary metric of success: Round-Trip Efficiency. In any energy storage system, RTE is the ratio of the energy retrieved from the storage medium to the energy used to charge it. Research indicates that energy storage systems can lose as much as 20% of their power during the conversion process (<a href="https://www.sunpal-energy.com/round-trip-efficiency-explained-why-your-energy-storage-system-loses-20-of-your-power/" rel="noopener noreferrer" target="_blank">Finding 6</a>).</p>
+<p>In a solar-to-hydrogen loop, losses occur at four distinct points:
+1.  <strong>Photovoltaic Conversion:</strong> The efficiency of the solar panels.
+2.  <strong>Electrolysis:</strong> The energy required to split water molecules ($H_2O \rightarrow H_2 + O_2$).
+3.  <strong>Compression and Storage:</strong> The mechanical energy required to pressurize hydrogen.
+4.  <strong>Fuel Cell Conversion:</strong> The energy lost as heat when hydrogen is recombined with oxygen to create electricity.</p>
+<p>To maximize the utility of a garage-built system, the builder must prioritize high-efficiency conversion components, specifically focusing on the electrolysis stage, which is often the most energy-intensive step.</p>
+<h2 id="pathway-1-electrical-pathways-the-diy-standard">Pathway 1: Electrical Pathways (The DIY Standard)</h2>
+<figure class="section-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs10973-026-15436-0/MediaObjects/10973_2026_15436_Figa_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs10973-026-15436-0/MediaObjects/10973_2026_15436_Figa_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>Electrical pathways are the most accessible for garage builds because they rely on standard DC power electronics and modular components. These methods use Photovoltaic (PV) arrays to generate DC electricity, which then feeds an electrolyzer.</p>
+<h3 id="the-modular-buffered-architecture">The Modular Buffered Architecture</h3>
+<p>The most common and reliable framework for a DIY build is the <strong>Modular Buffered Architecture</strong>. In this setup, the PV array does not feed the electrolyzer directly. Instead, the electricity is fed into a battery buffer. This buffer serves two critical functions: it stabilizes the fluctuating output of the solar panels and ensures that the electrolyzer receives a consistent, steady flow of current.</p>
+<p>Electrolyzers, particularly Proton Exchange Membrane (PEM) types, are sensitive to "jittery" power inputs. By using a battery as a buffer, the system can maintain the electrolyzer at its optimal operating point, maximizing the rate of hydrogen production. Once the hydrogen is produced, it is compressed and stored. When electricity is needed, the hydrogen is fed into a PEM Fuel Cell (PEMFC), which converts the chemical energy back into electricity (<a href="https://xray.greyb.com/solar-cells/energy-conversion-electrolysis-hydrogen" rel="noopener noreferrer" target="_blank">Finding 2</a>). This is the "gold standard" for reliability in a home setting.</p>
+<h3 id="the-converter-less-architecture-hardware-optimization">The Converter-less Architecture (Hardware Optimization)</h3>
+<p>For the enthusiast looking to squeeze out every percentage of efficiency, the <strong>Converter-less Architecture</strong> is a compelling alternative. Traditional systems use complex power converters (inverters/rectifiers) to match the voltage of the PV array to the requirements of the electrolyzer. However, every converter introduces resistive and switching losses.</p>
+<p>A converter-less design eliminates these components by directly coupling the PV array to the electrolyzer stack. To manage the Maximum Power Point Tracking (MPPT), the system dynamically switches individual electrolyzer cells in and out of the stack. This mimics the behavior of a converter but does so through mechanical/logical switching rather than high-frequency electrical switching. For a garage build, this simplifies the hardware requirements to a stack of electrolyzers, a diode to prevent reverse current, and a smoothing capacitor to stabilize the voltage (<a href="https://arxiv.org/html/2407.10075v1" rel="noopener noreferrer" target="_blank">Finding 1</a>, <a href="https://arxiv.org/abs/2407.10075" rel="noopener noreferrer" target="_blank">Finding 9</a>). This method significantly reduces the complexity of the power electronics while maintaining high efficiency.</p>
+<h3 id="alkaline-electrolysis-framework">Alkaline Electrolysis Framework</h3>
+<p>If the goal is high electrical efficiency using off-the-shelf components, <strong>Alkaline Electrolysis</strong> is arguably the strongest candidate. This method utilizes a potassium hydroxide (KOH) electrolyte and nickel electrodes. Research shows that alkaline electrolyzers can achieve an electrical efficiency of 62-82% (<a href="https://www.nature.com/articles/s41598-024-76191-6" rel="noopener noreferrer" target="_blank">Finding 8</a>).</p>
+<p>While alkaline systems are robust, they require specific power conditioning to handle high-current demands. To build this effectively in a garage, the research suggests using specific DC-DC topologies, such as the <strong>Isolated Full-Bridge Boost Converter (IFBBC)</strong>, Interleaved Buck-Boost, or 3-level buck-boost converters. These components are available in industrial electronics catalogs and allow the builder to precisely regulate the power delivered to the alkaline stack, ensuring the system operates at peak efficiency regardless of the solar intensity.</p>
+<h2 id="pathway-2-thermally-integrated-pathways-high-performance">Pathway 2: Thermally Integrated Pathways (High-Performance)</h2>
+<p>While electrical pathways are easier to build, they often ignore the "waste" heat generated during conversion. Thermally integrated pathways attempt to capture and reuse this heat to increase overall system efficiency.</p>
+<h3 id="thermally-integrated-parabolic-dish-pem">Thermally Integrated Parabolic Dish &amp; PEM</h3>
+<p>A highly efficient method for a kilowatt-scale system involves using a <strong>dual-axis tracking parabolic dish concentrator</strong> paired with a PEM electrolyzer. Instead of relying solely on PV cells to create electricity, this system uses concentrated solar energy to provide both heat and power.</p>
+<p>By concentrating the sun's rays, the system achieves a much higher power density. Furthermore, the heat generated by the concentration is used to pre-heat the water/electrolyte. Because the PEM electrolyzer operates more efficiently at higher temperatures, this "co-generation" of heat significantly reduces the amount of electrical energy required to split the water molecules. This is a sophisticated build, but because it utilizes commercial parabolic dishes and PEM electrolyzers, it remains feasible for a dedicated hobbyist with a large garage or outdoor space (<a href="https://www.nature.com/articles/s41560-023-01247-2" rel="noopener noreferrer" target="_blank">Finding 1</a>).</p>
+<h3 id="why-solid-oxide-electrolysis-soe-is-not-garage-buildable">Why Solid Oxide Electrolysis (SOE) is Not Garage-Buildable</h3>
+<p>The research also highlights <strong>Concentrated Solar Power (CSP) with Solid Oxide Electrolysis (SOE)</strong>. This method is incredibly efficient, potentially reducing electrical energy demand by 30% by using CSP to reach temperatures of 700°C–900°C. However, the report explicitly notes that these technologies are currently characterized as large-scale or laboratory-scale. The extreme temperatures required would necessitate industrial-grade materials and reactors that are not available as off-the-shelf components for a garage project (<a href="https://www.frontiersin.org/journals/energy-research/articles/10.3389/fenrg.2025.1698593/full" rel="noopener noreferrer" target="_blank">Finding 2</a>).</p>
+<h2 id="pathway-3-advanced-thermochemical-pathways-industrial-scale">Pathway 3: Advanced Thermochemical Pathways (Industrial Scale)</h2>
+<figure class="section-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41598-025-31795-4/MediaObjects/41598_2025_31795_Fig1_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41598-025-31795-4/MediaObjects/41598_2025_31795_Fig1_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The report examined the <strong>Vanadium–Chlorine (V–Cl) Thermochemical Water Splitting Cycle (TWSC)</strong>. This is a superior thermochemical pathway that operates at moderate temperatures (800–900 °C), making it less prone to corrosion than other cycles. While it represents a pinnacle of solar-to-hydrogen efficiency, it is entirely unsuitable for a garage build. The infrastructure required—including solar towers and Haber–Bosch reactors—is strictly industrial. Therefore, this pathway is excluded from the practical recommendations for the user's specific constraints.</p>
+<h2 id="comparative-analysis-choosing-the-right-path">Comparative Analysis: Choosing the Right Path</h2>
+<p>To determine the "most efficient" method, we must weigh efficiency against complexity and component availability.</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Efficiency Potential</th>
+<th>Complexity</th>
+<th>Garage Feasibility</th>
+<th>Key Components</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Modular Buffered</strong></td>
+<td>Moderate</td>
+<td>Low</td>
+<td><strong>High</strong></td>
+<td>PV, Battery, PEM Electrolyzer</td>
+</tr>
+<tr>
+<td><strong>Converter-less</strong></td>
+<td>High</td>
+<td>Moderate</td>
+<td><strong>High</strong></td>
+<td>PV, Electrolyzer Stack, Diodes</td>
+</tr>
+<tr>
+<td><strong>Alkaline (IFBBC)</strong></td>
+<td>High (62-82%)</td>
+<td>Moderate</td>
+<td><strong>High</strong></td>
+<td>PV, DC-DC Converter, KOH, Nickel</td>
+</tr>
+<tr>
+<td><strong>Parabolic Dish</strong></td>
+<td>Very High</td>
+<td>High</td>
+<td><strong>Moderate</strong></td>
+<td>Parabolic Dish, PEM Electrolyzer</td>
+</tr>
+</tbody>
+</table>
+<h3 id="the-case-for-alkaline-electrolysis">The Case for Alkaline Electrolysis</h3>
+<p>For a builder who wants the highest efficiency without moving into industrial-scale thermochemical reactors, the <strong>Alkaline Electrolysis framework</strong> is the winner. It provides a high electrical efficiency (up to 82%) and uses nickel and potassium hydroxide—substances that are easily sourced. The only "complex" hurdle is the DC-DC converter, but since specific topologies like the Isolated Full-Bridge Boost Converter (IFBBC) are well-documented in power electronics, they can be sourced or built using standard MOSFETs and inductors.</p>
+<h3 id="the-case-for-the-converter-less-architecture">The Case for the Converter-less Architecture</h3>
+<p>If the builder's primary goal is to minimize the number of components and reduce "hidden" losses in power electronics, the <strong>Converter-less Architecture</strong> is the most elegant solution. By using dynamic cell switching to manage the Maximum Power Point Tracking (MPPT), the builder removes the need for a high-power inverter/converter, which is often a point of failure and a source of significant heat loss in DIY systems.</p>
+<h2 id="conclusion-the-recommended-build-strategy">Conclusion: The Recommended Build Strategy</h2>
+<figure class="section-image" data-img-url="https://www.frontiersin.org/api/ipx/w=1200&amp;f=png/https://www.frontiersin.org/files/Articles/1698593/fenrg-13-1698593-HTML/image_m/fenrg-13-1698593-g001.jpg"><img src="https://www.frontiersin.org/api/ipx/w=1200&amp;f=png/https://www.frontiersin.org/files/Articles/1698593/fenrg-13-1698593-HTML/image_m/fenrg-13-1698593-g001.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>To convert excess solar energy into hydrogen for a closed-loop system in a garage setting, the most efficient and buildable method is the <strong>Alkaline Electrolysis Framework paired with a DC-DC Power Conditioner.</strong></p>
+<p>This approach is superior for a garage build because:
+1.  <strong>High Efficiency:</strong> It achieves an electrical efficiency of 62-82%, which is significantly higher than many standard modular systems.
+2.  <strong>Component Availability:</strong> Nickel electrodes and KOH electrolyte are "off-the-shelf" industrial chemicals and metals.
+3.  <strong>Scalability:</strong> The system can be scaled by adding more electrolyzer cells to the stack.
+4.  <strong>Manageability:</strong> By using an Isolated Full-Bridge Boost Converter (IFBBC), the builder can precisely manage the high-current demands of the electrolysis process, ensuring that the solar energy is converted into hydrogen with minimal waste.</p>
+<p>For the most reliable "plug-and-play" experience, the <strong>Modular Buffered Architecture</strong> (PV $\rightarrow$ Battery $\rightarrow$ Electrolyzer) remains the safest starting point, as it protects the sensitive electrolysis equipment from the inherent instability of solar power. However, for the ultimate efficiency-to-buildability ratio, the <strong>Alkaline/IFBBC</strong> path provides the most professional-grade result for a DIY environment.</p>
+
+    <div class="sources-panel">
+<details>
+<summary>Sources (12)</summary>
+<div class="sources-list">
+<a href="https://www.nature.com/articles/s41560-023-01247-2" target="_blank" rel="noopener noreferrer"><span class="snum">1.</span><span>Kilowatt-scale solar hydrogen production system using a ... - Nature</span><span class="sdomain">nature.com</span></a>
+<a href="https://xray.greyb.com/solar-cells/energy-conversion-electrolysis-hydrogen" target="_blank" rel="noopener noreferrer"><span class="snum">2.</span><span>Hydrogen Production through Solar-Powered Electrolysis</span><span class="sdomain">xray.greyb.com</span></a>
+<a href="https://arxiv.org/html/2407.10075v1" target="_blank" rel="noopener noreferrer"><span class="snum">3.</span><span>Power System Architecture and Control for Green Hydrogen Production via ...</span><span class="sdomain">arxiv.org</span></a>
+<a href="https://www.frontiersin.org/journals/energy-research/articles/10.3389/fenrg.2025.1698593/full" target="_blank" rel="noopener noreferrer"><span class="snum">4.</span><span>Integration of concentrated solar power with solid oxide ... - Frontiers</span><span class="sdomain">frontiersin.org</span></a>
+<a href="https://www.nature.com/articles/s41598-025-31795-4" target="_blank" rel="noopener noreferrer"><span class="snum">5.</span><span>Solar-driven thermochemical tri-generation of electricity, hydrogen ...</span><span class="sdomain">nature.com</span></a>
+<a href="https://link.springer.com/article/10.1007/s10973-026-15436-0" target="_blank" rel="noopener noreferrer"><span class="snum">6.</span><span>Comprehensive experimental and theoretical analysis of a solar-hydrogen ...</span><span class="sdomain">link.springer.com</span></a>
+<a href="https://link.springer.com/article/10.1007/s42247-024-00697-y" target="_blank" rel="noopener noreferrer"><span class="snum">7.</span><span>Efficient solar-powered PEM electrolysis for sustainable hydrogen ...</span><span class="sdomain">link.springer.com</span></a>
+<a href="https://www.sunpal-energy.com/round-trip-efficiency-explained-why-your-energy-storage-system-loses-20-of-your-power/" target="_blank" rel="noopener noreferrer"><span class="snum">8.</span><span>Round-Trip Efficiency Explained: Why Your Energy Storage System Loses ...</span><span class="sdomain">sunpal-energy.com</span></a>
+<a href="https://www.anernstore.com/blogs/diy-solar-guides/round-trip-efficiency-batteries" target="_blank" rel="noopener noreferrer"><span class="snum">9.</span><span>Round Trip Efficiency Batteries Guide | Anern</span><span class="sdomain">anernstore.com</span></a>
+<a href="https://www.nature.com/articles/s41598-024-76191-6" target="_blank" rel="noopener noreferrer"><span class="snum">10.</span><span>Power electronics for green hydrogen generation with focus on methods ...</span><span class="sdomain">nature.com</span></a>
+<a href="https://arxiv.org/abs/2407.10075" target="_blank" rel="noopener noreferrer"><span class="snum">11.</span><span>[2407.10075] Power System Architecture and Control for Green Hydrogen ...</span><span class="sdomain">arxiv.org</span></a>
+<a href="https://www.electronicsforu.com/electronics-projects/solar-electronics-projects" target="_blank" rel="noopener noreferrer"><span class="snum">12.</span><span>10 Solar Electronics Projects You Can Build at Home</span><span class="sdomain">electronicsforu.com</span></a>
+</div>
+</details>
+</div>
+
+    <div class="chat-cta"><button id="btn-chat-about" class="chat-cta-btn" data-research-id="rp-662e5acc7aa2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Discuss</span></button><div class="chat-cta-hint">Opens a new chat with this report as context.</div></div>
+  </main>
+</div>
+
+<div class="report-footer">
+  Generated by Odysseus Deep Research · June 18, 2026 at 21:57
+</div>
+
+<script>
+(function() {
+  // ESC closes the report tab. window.close() works when the tab was
+  // opened via window.open() (which is how the panel launches it). If the
+  // browser blocks self-close (rare — e.g. report opened by direct URL),
+  // fall back to history.back() so ESC still feels responsive.
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    // Don't hijack ESC while typing in a field or with an open dropdown.
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    var menu = document.getElementById('export-menu');
+    if (menu && menu.classList.contains('open')) { menu.classList.remove('open'); return; }
+    try { window.close(); } catch (err) {}
+    // window.close() is a no-op when the tab wasn't script-opened; in that
+    // case fall back to navigation so the key isn't ignored.
+    setTimeout(function() { if (!window.closed) history.back(); }, 50);
+  });
+
+  // Export dropdown toggle
+  var exportBtn = document.getElementById('btn-export');
+  var exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { exportMenu.classList.remove('open'); });
+
+  // Save as PDF (browser print)
+  document.getElementById('btn-pdf').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    window.print();
+  });
+
+  // Download HTML
+  document.getElementById('btn-html').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = document.title.replace(/[^a-z0-9]+/gi, '-').substring(0, 60) + '.html';
+    a.click();
+  });
+
+  // Per-image hide — fades the image out, then POSTs to the backend so
+  // future renders of this report skip the URL. Falls back to a silent
+  // no-op if there's no session_id (e.g. the report was opened from a
+  // saved-HTML download where the backend isn't reachable).
+  var __sessionId = "rp-662e5acc7aa2";
+  // Unused scraped images — the reroll pool. Each is used at most once.
+  var __spareImages = ["https://www.sunpal-energy.com/wp-content/uploads/2025/06/Understanding-Round-Trip-Efficiency-in-Solar-Storage.webp", "https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41598-024-76191-6/MediaObjects/41598_2024_76191_Fig90_HTML.png", "https://static.arxiv.org/icons/twitter/arxiv-logo-twitter-square.png", "https://www.electronicsforu.com/wp-contents/uploads/2026/06/nonstop-solar-lamp.jpg"];
+
+  // Persist a rejected URL so future renders skip it.
+  function __persistHide(url) {
+    if (!__sessionId || !url) return;
+    fetch('/api/research/' + encodeURIComponent(__sessionId) + '/hide-image', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url }),
+    }).catch(function(err) { console.warn('hide-image POST failed', err); });
+  }
+
+  // Once the pool is empty, there's nothing to swap to — hide all reroll btns.
+  function __syncRerollAvailability() {
+    if (__spareImages.length === 0) {
+      document.querySelectorAll('.img-reroll-btn').forEach(function(b) { b.disabled = true; });
+    }
+  }
+
+  document.querySelectorAll('.img-hide-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var url = wrap.dataset.imgUrl;
+      wrap.classList.add('fading');
+      setTimeout(function() { wrap.remove(); }, 280);
+      __persistHide(url);
+    });
+  });
+
+  // Reroll — swap the current image for the next unused scraped one, and
+  // persist-hide the rejected URL so it won't resurface on reload.
+  document.querySelectorAll('.img-reroll-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      // Per-button busy flag — a rapid double-click would otherwise both
+      // shift the spare pool, but only the second probe's image would land,
+      // silently consuming the first one. Bail until finish() clears it.
+      if (btn.dataset._busy === '1') return;
+      if (__spareImages.length === 0) { btn.disabled = true; return; }
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      btn.dataset._busy = '1';
+      var oldUrl = wrap.dataset.imgUrl;
+      var newUrl = __spareImages.shift();
+      btn.classList.add('spinning');
+      // Swap once the new image has loaded (or failed) to avoid a flash of empty.
+      var probe = new Image();
+      var done = false;
+      var finish = function(ok) {
+        if (done) return; done = true;
+        btn.classList.remove('spinning');
+        delete btn.dataset._busy;
+        if (ok) {
+          img.src = newUrl;
+          wrap.dataset.imgUrl = newUrl;
+          __persistHide(oldUrl);
+        } else {
+          // Bad candidate — persist-hide it so it can't resurface on reload,
+          // then try the next spare if any remain. Busy flag already cleared
+          // so the synthetic click below proceeds.
+          __persistHide(newUrl);
+          if (__spareImages.length) btn.click();
+        }
+        __syncRerollAvailability();
+      };
+      probe.onload = function() { finish(true); };
+      probe.onerror = function() { finish(false); };
+      probe.src = newUrl;
+    });
+  });
+  __syncRerollAvailability();
+
+  // "Show hidden (N)" button — clears the hidden_images list on the
+  // server, then reloads the page so all images come back.
+  var restoreBtn = document.getElementById('btn-restore-images');
+  if (restoreBtn && __sessionId) {
+    restoreBtn.addEventListener('click', function() {
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = 'Restoring…';
+      fetch('/api/research/' + encodeURIComponent(__sessionId) + '/unhide-images', {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function() { window.location.reload(); })
+        .catch(function(err) {
+          restoreBtn.disabled = false;
+          restoreBtn.textContent = 'Failed — retry?';
+          console.warn('unhide-images POST failed', err);
+        });
+    });
+  }
+
+  // TOC: explicit smooth-scroll handler (some browsers/anchor plugins
+  // bypass the CSS `scroll-behavior: smooth` rule on hash clicks).
+  // Also keeps the URL hash updated and toggles an `.active` highlight.
+  var tocLinks = document.querySelectorAll('.toc-sidebar nav a[href^="#"]');
+  tocLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var id = link.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  // Highlight the TOC entry that matches whichever heading is currently
+  // closest to the top of the viewport. IntersectionObserver keeps it
+  // cheap (no scroll listener spam).
+  var tocMap = {};
+  tocLinks.forEach(function(link) {
+    tocMap[link.getAttribute('href').slice(1)] = link;
+  });
+  var activeId = null;
+  function setActive(id) {
+    if (id === activeId) return;
+    if (activeId && tocMap[activeId]) tocMap[activeId].classList.remove('active');
+    if (id && tocMap[id]) tocMap[id].classList.add('active');
+    activeId = id;
+  }
+  var headings = document.querySelectorAll('.content h2[id], .content h3[id]');
+  if (headings.length && 'IntersectionObserver' in window) {
+    var visible = new Set();
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        if (en.isIntersecting) visible.add(en.target.id);
+        else visible.delete(en.target.id);
+      });
+      // Pick the visible heading that's furthest down in document order
+      // before the current scroll — i.e. the section we're reading.
+      var current = null;
+      for (var i = 0; i < headings.length; i++) {
+        if (visible.has(headings[i].id)) { current = headings[i].id; break; }
+      }
+      if (current) setActive(current);
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+    headings.forEach(function(h) { io.observe(h); });
+  }
+
+  // Chat about this research — POST to spinoff and redirect to the new chat
+  var chatBtn = document.getElementById('btn-chat-about');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function() {
+      var researchId = chatBtn.dataset.researchId;
+      if (!researchId) return;
+      var origLabel = chatBtn.innerHTML;
+      chatBtn.disabled = true;
+      chatBtn.innerHTML = '<span>Creating chat…</span>';
+      fetch('/api/research/spinoff/' + encodeURIComponent(researchId), {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(d) {
+            throw new Error(d && d.detail ? d.detail : ('HTTP ' + res.status));
+          }, function() { throw new Error('HTTP ' + res.status); });
+        }
+        return res.json();
+      }).then(function(data) {
+        if (!data || !data.session_id) {
+          throw new Error('Server did not return a session id');
+        }
+        var url = '/#' + data.session_id;
+        var opened = false;
+        // The report typically opens in a new tab — if we have access to the
+        // original Odysseus tab, navigate it and close this report tab so the
+        // user lands directly in the new chat.
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.href = url;
+            window.opener.location.reload();
+            window.opener.focus();
+            opened = true;
+            window.close();
+          }
+        } catch (e) { /* cross-origin or detached opener — fall through */ }
+        if (!opened) {
+          // No opener (report was opened directly via URL) — open the chat in a
+          // new tab so the report stays available.
+          var w = window.open(url, '_blank');
+          if (w) {
+            chatBtn.disabled = false;
+            chatBtn.innerHTML = '<span>Chat opened in new tab</span>';
+          } else {
+            // Popup blocked — navigate this tab as a last resort.
+            window.location.href = url;
+            window.location.reload();
+          }
+        }
+      }).catch(function(err) {
+        chatBtn.disabled = false;
+        chatBtn.innerHTML = origLabel;
+        alert('Could not start follow-up chat: ' + err.message);
+      });
+    });
+  }
+})();
+
+// Colorize comparison table cells
+if (document.body.classList.contains('category-comparison')) {
+  const pos = /^(yes|excellent|best|great|strong|fast|high|superior|winner|free|unlimited|native|full|advanced|built[- ]in|✓|✅|⭐)/i;
+  const neg = /^(no|none|poor|weak|slow|low|limited|lacking|missing|basic|minimal|✗|❌|N\/A$)/i;
+  const mid = /^(moderate|average|fair|partial|some|decent|okay|mixed|varies|depends)/i;
+  document.querySelectorAll('.content table td').forEach(td => {
+    if (td.cellIndex === 0) return;
+    const t = td.textContent.trim();
+    if (pos.test(t)) td.classList.add('cmp-pos');
+    else if (neg.test(t)) td.classList.add('cmp-neg');
+    else if (mid.test(t)) td.classList.add('cmp-mid');
+  });
+}
+</script>
+
+
+</body></html>

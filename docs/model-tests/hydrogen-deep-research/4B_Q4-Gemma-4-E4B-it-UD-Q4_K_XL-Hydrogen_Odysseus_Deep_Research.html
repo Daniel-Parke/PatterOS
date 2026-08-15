@@ -1,0 +1,1052 @@
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Research Report: The Green Hydrogen Revolution at Home</title>
+<meta name="description" content="Architecting a Closed-Loop Solar-to-Hydrogen System for the Modern Garage
+
+
+
+ Executive Summary
+
+This comprehensive research report investigates the most effic">
+<meta property="og:title" content="Research Report: The Green Hydrogen Revolution at Home">
+<meta property="og:description" content="Architecting a Closed-Loop Solar-to-Hydrogen System for the Modern Garage
+
+
+
+ Executive Summary
+
+This comprehensive research report investigates the most effic">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://sunergyhub.com/wp-content/uploads/2025/10/solarforcaravan.jpg">
+<meta name="theme-color" content="#b8543a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131214" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='75' font-size='75'&gt;O&lt;/text&gt;&lt;/svg&gt;">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --bg: #fbf9f4;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1ede4;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1817;
+  --text-dim: #5a5651;
+  --text-muted: #8a8580;
+  --accent: #b8543a;
+  --accent-light: #d97a5e;
+  --accent-bg: rgba(184,84,58,0.06);
+  --gold: #c9952e;
+  --gold-bg: rgba(201,149,46,0.09);
+  --aurora-a: rgba(184,84,58,0.10);
+  --aurora-b: rgba(201,149,46,0.08);
+  --aurora-c: rgba(64,98,128,0.07);
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+  --max-w: 760px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131214; --bg-surface: #1c1a1e; --bg-surface-alt: #25232a;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.16);
+    --text: #ece8e2; --text-dim: #a8a39c; --text-muted: #6f6b66;
+    --accent: #e88f73; --accent-light: #f4ad95; --accent-bg: rgba(232,143,115,0.09);
+    --gold: #e8c05a; --gold-bg: rgba(232,192,90,0.09);
+    --aurora-a: rgba(232,143,115,0.13);
+    --aurora-b: rgba(232,192,90,0.09);
+    --aurora-c: rgba(125,180,224,0.10);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 28px rgba(0,0,0,0.55);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Give smooth-scroll some breathing room so anchors land below the
+     fixed toolbar instead of being shoved straight under it. */
+  scroll-padding-top: 4rem;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Aurora background ─────────────────────────────────
+   Slowly-drifting layered blobs in the accent palette. Sits behind
+   the content, fixed to the viewport so scrolling doesn't reset the
+   composition. Subtle grain on top stops it reading as 'flat CSS'. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -20vw;
+  z-index: -2;
+  background:
+    radial-gradient(40vw 50vh at 18% 22%, var(--aurora-a) 0%, transparent 60%),
+    radial-gradient(45vw 55vh at 82% 12%, var(--aurora-b) 0%, transparent 65%),
+    radial-gradient(55vw 60vh at 50% 88%, var(--aurora-c) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Subtle film-grain — SVG turbulence baked to a data-URL. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,0,0) scale(1);     }
+  50%  { transform: translate3d(2vw,-1vh,0) scale(1.04); }
+  100% { transform: translate3d(-1vw,1.5vh,0) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* ── Toolbar (top-right) ──────────────────────────── */
+.toolbar {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.toolbar:hover { opacity: 1; }
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s;
+  position: relative;
+}
+.toolbar button:hover { background: var(--bg-surface-alt); }
+.toolbar button svg { width: 14px; height: 14px; flex-shrink: 0; }
+.toolbar .toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--text);
+  color: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.toolbar .toast.show { opacity: 1; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-width: 140px;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu button:hover { background: var(--bg-surface-alt); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: transparent;
+  color: var(--text);
+  padding: 5.5rem 2rem 2.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* A hair-thin gradient hairline divider under the hero to anchor it
+   without putting it on a heavy boxed background. */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: min(60%, 320px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.hero-label {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-body);
+}
+.hero h1 {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 120, 'SOFT' 50;
+  line-height: 1.15;
+  max-width: 720px;
+  margin: 0 auto;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Hero image ───────────────────────────────────── */
+.hero-image {
+  max-width: var(--max-w);
+  margin: -2rem auto 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 2rem;
+}
+.hero-image img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  display: block;
+}
+
+/* ── Section images ───────────────────────────────── */
+.section-image {
+  margin: 1.5rem 0;
+  position: relative;
+}
+.section-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ── Per-image hide button ────────────────────────────
+   A small X that appears on hover (or always on touch) so users can
+   remove irrelevant OG images. Click POSTs the URL to the backend so
+   the next render skips it. */
+.img-hide-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-hide-btn { top: 14px; right: 2.5rem; }
+/* Reroll sits just to the left of the hide button. */
+.img-reroll-btn {
+  position: absolute;
+  top: 10px; right: 46px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-reroll-btn { top: 14px; right: calc(2.5rem + 36px); }
+.section-image:hover .img-hide-btn,
+.section-image:hover .img-reroll-btn,
+.hero-image:hover .img-hide-btn,
+.hero-image:hover .img-reroll-btn { opacity: 1; }
+.img-hide-btn:hover { background: var(--accent); }
+.img-reroll-btn:hover { background: var(--accent); }
+.img-hide-btn:active,
+.img-reroll-btn:active { transform: scale(0.92); }
+.img-reroll-btn.spinning svg { animation: img-reroll-spin 0.6s linear infinite; }
+.img-reroll-btn:disabled { display: none; }
+@keyframes img-reroll-spin { to { transform: rotate(360deg); } }
+@media (hover: none) {
+  /* Touch devices have no hover — show the buttons at low opacity always. */
+  .img-hide-btn, .img-reroll-btn { opacity: 0.7; }
+}
+.section-image.fading,
+.hero-image.fading {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* ── Stats bar ─────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.stat { display: flex; align-items: center; gap: 0.35rem; }
+.stat-value { font-weight: 600; color: var(--text); }
+
+/* ── Layout ────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: calc(var(--max-w) + 260px);
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+}
+
+/* ── TOC sidebar ───────────────────────────────────── */
+.toc-sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 3.2rem 0.8rem 2rem 1.4rem;
+  border-right: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.toc-sidebar nav { position: relative; }
+.toc-sidebar nav a {
+  position: relative;
+  display: block;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 0.42rem 0.7rem 0.42rem 0.85rem;
+  margin: 1px 0;
+  border-radius: 6px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  transition: color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+/* Sliding accent indicator on the left edge of each TOC link */
+.toc-sidebar nav a::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2px; height: 0;
+  background: var(--accent);
+  transform: translateY(-50%);
+  border-radius: 1px;
+  transition: height 0.18s ease, opacity 0.18s ease;
+  opacity: 0;
+}
+.toc-sidebar nav a:hover {
+  color: var(--text);
+  background: var(--accent-bg);
+  padding-left: 1rem;
+}
+.toc-sidebar nav a:hover::before {
+  height: 60%;
+  opacity: 1;
+}
+.toc-sidebar nav a.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-bg);
+}
+.toc-sidebar nav a.active::before {
+  height: 80%;
+  opacity: 1;
+}
+.toc-sidebar nav a.depth-3 {
+  padding-left: 1.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.toc-sidebar nav a.depth-3:hover { padding-left: 1.45rem; }
+
+/* ── Content ───────────────────────────────────────── */
+.content { max-width: var(--max-w); padding: 3rem 2.5rem 4rem; }
+
+/* Display headings — Fraunces optical-size driven so they get more
+   contrast and personality at the larger end. */
+.content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent) 0%, transparent 65%) 1;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text);
+}
+.content h2:first-child { margin-top: 0; }
+.content h3 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 32;
+  margin: 2.2rem 0 0.6rem;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.content h4 {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin: 1.6rem 0 0.5rem;
+}
+.content p { margin-bottom: 1.1rem; hanging-punctuation: first last; }
+
+/* Drop cap on the very first paragraph of the body — old-school editorial
+   touch that anchors the reader. */
+.content > p:first-of-type::first-letter,
+.content > h2:first-child + p::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+  font-size: 3.6em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.15em 0.12em 0 -0.04em;
+  color: var(--accent);
+}
+
+.content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+.content a:hover {
+  text-decoration-color: var(--accent);
+  color: var(--accent-light);
+}
+.content ul, .content ol { margin: 0 0 1.1rem 1.6rem; }
+.content li { margin-bottom: 0.4rem; }
+.content li::marker { color: var(--accent); }
+.content li > ul, .content li > ol { margin-top: 0.4rem; margin-bottom: 0; }
+.content blockquote {
+  position: relative;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-bg);
+  padding: 1.1rem 1.4rem 1.1rem 2.6rem;
+  margin: 1.5rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.content blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.5rem; top: 0.3rem;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-style: normal;
+  color: var(--gold);
+  opacity: 0.5;
+  line-height: 1;
+}
+.content hr { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 2rem 0; }
+.content code { font-family: var(--font-mono); font-size: 0.86em; background: var(--bg-surface-alt); padding: 0.15em 0.4em; border-radius: 4px; }
+.content pre { background: var(--bg-surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.25rem 0; font-size: 0.86rem; line-height: 1.6; }
+.content pre code { background: none; padding: 0; }
+.content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.9rem; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.content th { text-align: left; padding: 0.7rem 1rem; background: var(--accent-bg); font-weight: 600; border-bottom: 2px solid var(--border-strong); }
+.content td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.content tr:last-child td { border-bottom: none; }
+.content tr:hover td { background: var(--accent-bg); }
+
+/* ── Sources (collapsible list) ───────────────────── */
+.sources-panel { margin-top: 3rem; border-top: 2px solid var(--border); padding-top: 1.5rem; }
+.sources-panel details { margin: 0; }
+.sources-panel summary {
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; font-size: 1rem; font-weight: 600;
+  color: var(--text); padding: 0.5rem 0; list-style: none;
+  user-select: none;
+}
+.sources-panel summary::-webkit-details-marker { display: none; }
+.sources-panel summary::before {
+  content: '\25B6'; font-size: 0.65em; color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.sources-panel details[open] summary::before { transform: rotate(90deg); }
+.sources-list { padding: 0.5rem 0 0 0.25rem; }
+.sources-list a {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.35rem 0; font-size: 0.85rem;
+  color: var(--text); text-decoration: none;
+  transition: color 0.15s;
+}
+.sources-list a:hover { color: var(--accent); }
+.sources-list .snum {
+  color: var(--text-muted); font-size: 0.75rem;
+  min-width: 1.5rem; text-align: right; flex-shrink: 0;
+}
+.sources-list .sdomain {
+  color: var(--text-muted); font-size: 0.75rem;
+  margin-left: auto; flex-shrink: 0;
+}
+
+/* ── Chat-about CTA ────────────────────────────────── */
+.chat-cta {
+  margin: 3rem 0 1rem; padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface);
+}
+.chat-cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; font-size: 0.95rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.15s, transform 0.05s;
+}
+.chat-cta-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.chat-cta-btn:active:not(:disabled) { transform: translateY(1px); }
+.chat-cta-btn:disabled { opacity: 0.6; cursor: progress; }
+.chat-cta-hint {
+  margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.report-footer {
+  text-align: center; padding: 2rem; font-size: 0.75rem;
+  color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 2rem;
+}
+
+/* ── Animations ────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .content h2, .content h3, .content p, .content ul, .content ol,
+  .content blockquote, .content table, .content pre, .section-image {
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ── Print ─────────────────────────────────────────── */
+@media print {
+  .toc-sidebar, .toolbar { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+</style>
+</head>
+<body class="">
+
+<!-- Toolbar: Export + Restore hidden images -->
+<div class="toolbar">
+  
+  <div class="dropdown">
+    <button id="btn-export" title="Export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export ▾
+    </button>
+    <div class="dropdown-menu" id="export-menu">
+      <button id="btn-pdf">Save as PDF</button>
+      <button id="btn-html">Download HTML</button>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-label">Odysseus — Deep Research Report</div>
+  <h1>Research Report: The Green Hydrogen Revolution at Home</h1>
+</div>
+
+<div class="hero-image" data-img-url="https://sunergyhub.com/wp-content/uploads/2025/10/solarforcaravan.jpg"><img src="https://sunergyhub.com/wp-content/uploads/2025/10/solarforcaravan.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-value">358.2s</span> Duration</div>
+  <div class="stat"><span class="stat-value">8</span> Rounds</div>
+  <div class="stat"><span class="stat-value">22</span> Queries</div>
+  <div class="stat"><span class="stat-value">55</span> URLs Analyzed</div>
+  <div class="stat"><span class="stat-value">gemma-4-E4B-it-UD-Q4_K_XL</span> Model</div>
+  <div class="stat"><span class="stat-value">duckduckgo</span> Search</div>
+</div>
+
+<div class="layout">
+  <aside class="toc-sidebar">
+    <nav>
+      <a href="#architecting-a-closed-loop-solar-to-hydrogen-system-for-the-modern-garage" class="depth-2">Architecting a Closed-Loop Solar-to-Hydrogen System for the Modern Garage</a>
+      <a href="#executive-summary" class="depth-3">Executive Summary</a>
+      <a href="#1-introduction-the-imperative-for-decentralized-green-energy" class="depth-2">1. Introduction: The Imperative for Decentralized Green Energy</a>
+      <a href="#2-phase-1-power-generation-and-storage-the-foundation-of-the-system" class="depth-2">2. Phase 1: Power Generation and Storage – The Foundation of the System</a>
+      <a href="#2-1-standard-off-grid-solar-infrastructure" class="depth-3">2.1. Standard Off-Grid Solar Infrastructure</a>
+      <a href="#2-2-advanced-integration-minimizing-complexity" class="depth-3">2.2. Advanced Integration: Minimizing Complexity</a>
+      <a href="#3-phase-2-hydrogen-production-the-electrolyzer-choice" class="depth-2">3. Phase 2: Hydrogen Production – The Electrolyzer Choice</a>
+      <a href="#3-1-comparative-analysis-of-electrolyzer-technologies" class="depth-3">3.1. Comparative Analysis of Electrolyzer Technologies</a>
+      <a href="#3-2-optimizing-operational-efficiency" class="depth-3">3.2. Optimizing Operational Efficiency</a>
+      <a href="#4-phase-3-energy-utilization-completing-the-closed-loop" class="depth-2">4. Phase 3: Energy Utilization – Completing the Closed Loop</a>
+      <a href="#4-1-the-role-of-the-fuel-cell" class="depth-3">4.1. The Role of the Fuel Cell</a>
+      <a href="#4-2-maximizing-overall-system-efficiency-chp" class="depth-3">4.2. Maximizing Overall System Efficiency (CHP)</a>
+      <a href="#5-hydrogen-storage-safety-and-efficiency-in-the-garage" class="depth-2">5. Hydrogen Storage: Safety and Efficiency in the Garage</a>
+      <a href="#5-1-compressed-gas-storage-the-conventional-method" class="depth-3">5.1. Compressed Gas Storage (The Conventional Method)</a>
+      <a href="#5-2-metal-hydride-storage-the-optimal-solution" class="depth-3">5.2. Metal Hydride Storage (The Optimal Solution)</a>
+      <a href="#6-safety-implementation-and-regulatory-requirements" class="depth-2">6. Safety, Implementation, and Regulatory Requirements</a>
+      <a href="#6-1-essential-safety-protocols" class="depth-3">6.1. Essential Safety Protocols</a>
+      <a href="#6-2-implementation-roadmap-the-most-efficient-build-path" class="depth-3">6.2. Implementation Roadmap: The Most Efficient Build Path</a>
+      <a href="#7-conclusion" class="depth-2">7. Conclusion</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <h2 id="architecting-a-closed-loop-solar-to-hydrogen-system-for-the-modern-garage">Architecting a Closed-Loop Solar-to-Hydrogen System for the Modern Garage</h2>
+<hr>
+<h3 id="executive-summary">Executive Summary</h3>
+<p>This comprehensive research report investigates the most efficient and practical methods for converting excess solar energy into storable hydrogen gas ($\text{H}_2$), which can then be utilized in a fuel cell to complete a self-sustaining, closed-loop energy cycle. The core constraint of this study is the requirement that the entire system must be buildable using readily available, off-the-shelf components within a residential garage environment.</p>
+<p>The findings confirm that building a small-scale, functional closed-loop system is <strong>highly feasible</strong>. The most efficient and accessible path involves integrating a modular Proton Exchange Membrane (PEM) electrolyzer with a small-scale photovoltaic (PV) array and pairing it with a corresponding PEM fuel cell. To maximize safety and efficiency in a garage setting, metal hydride storage is strongly recommended over standard compressed gas. By leveraging advanced, integrated designs—such as Artificial Photosynthesis or Direct Solar Hydrogen Generation (DSHG)—the complexity and cost associated with traditional battery-heavy setups can be significantly reduced. The overall system, when optimized for Combined Heat and Power (CHP), can achieve efficiencies exceeding 85% (Finding 2; Finding 5).</p>
+<hr>
+<h2 id="1-introduction-the-imperative-for-decentralized-green-energy">1. Introduction: The Imperative for Decentralized Green Energy</h2>
+<figure class="section-image" data-img-url="https://nenpower.com/wp-content/uploads/2024/11/image-99724.jpg"><img src="https://nenpower.com/wp-content/uploads/2024/11/image-99724.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The global energy transition demands decentralized, sustainable power solutions. While utility-scale solar farms dominate the headlines, the concept of converting surplus solar energy directly into a storable, transportable chemical fuel—hydrogen—offers a crucial pathway to energy independence. This process, known as Power-to-X, is the cornerstone of green hydrogen production.</p>
+<p>The challenge lies not just in the theoretical efficiency of the conversion, but in the practical, real-world implementation. How can this complex chemical and electrical process be miniaturized, simplified, and made safe enough for a residential setting, such as a garage?</p>
+<p>This report systematically breaks down the three critical stages of the closed loop: Power Generation, Hydrogen Production (Electrolysis), and Energy Utilization (Fuel Cell). By analyzing the available technology, we aim to define the most robust, cost-effective, and safest build path using components accessible to a dedicated DIY enthusiast or small-scale installer. The system must not only function but must also be manageable and safe within the confines of a garage (Finding 8).</p>
+<h2 id="2-phase-1-power-generation-and-storage-the-foundation-of-the-system">2. Phase 1: Power Generation and Storage – The Foundation of the System</h2>
+<p>The entire solar-to-hydrogen process is fundamentally an electrical one. The initial phase requires capturing solar energy and converting it into stable, usable DC power.</p>
+<h3 id="2-1-standard-off-grid-solar-infrastructure">2.1. Standard Off-Grid Solar Infrastructure</h3>
+<p>The most conventional approach involves a standard off-grid setup. Solar panels capture photons and convert them into DC electricity. This power is then managed by a charge controller, which regulates the flow of energy into a battery bank. The batteries act as the crucial buffer, allowing the electrolyzer to run even when the sun is not shining, ensuring continuous operation.</p>
+<p>For a small, residential application, the evidence suggests that a setup utilizing four solar panels could generate a system capacity of approximately 1.5kW, paired with necessary inverters and battery storage (Finding 1). The financial barrier to entry is also manageable; a cost-optimized system with battery storage can be achieved for under £1,200 (Finding 2). This modularity and affordability make the standard setup highly accessible for a garage build.</p>
+<h3 id="2-2-advanced-integration-minimizing-complexity">2.2. Advanced Integration: Minimizing Complexity</h3>
+<p>While the standard setup is feasible, it introduces complexity: solar panels $\rightarrow$ charge controller $\rightarrow$ battery storage $\rightarrow$ electrolyzer. Each conversion step introduces energy loss. To achieve maximum efficiency and simplicity, advanced research points toward integrating the power generation and conversion into a single, self-regulating unit.</p>
+<p>Two highly innovative methods emerge here:</p>
+<p><strong>A. Artificial Photosynthesis:</strong> This method is revolutionary because it integrates a heat-responsive electrolyzer with a solid electrolyte. By doing so, it bypasses the need for complex, battery-powered Maximum Power Point Tracking (MPPT) electronics, which are typically required in standard solar setups (Finding 7). This design drastically reduces the system's complexity and cost, making it exceptionally suitable for a simple, off-the-shelf build.</p>
+<p><strong>B. Direct Solar Hydrogen Generation (DSHG):</strong> DSHG represents the ultimate integration. It combines photovoltaic (PV) and electrocatalytic components into a single module. The PV–electrochemical (PV–EC) configuration allows a modified commercial PV module to perform both light capture and chemical conversion simultaneously (Finding 10). This approach minimizes the physical footprint and maximizes the direct conversion efficiency, making it the most elegant, albeit potentially most specialized, solution for a compact garage installation.</p>
+<h2 id="3-phase-2-hydrogen-production-the-electrolyzer-choice">3. Phase 2: Hydrogen Production – The Electrolyzer Choice</h2>
+<figure class="section-image" data-img-url="https://oncoreenergy.com/wp-content/uploads/2025/05/solar-hydrogen-generators-featured-image.jpg"><img src="https://oncoreenergy.com/wp-content/uploads/2025/05/solar-hydrogen-generators-featured-image.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The heart of the system is the electrolyzer, the device that performs the chemical splitting of water ($\text{H}_2\text{O}$) into hydrogen ($\text{H}_2$) and oxygen ($\text{O}_2$) using electrical energy. The choice of electrolyzer technology dictates the system's efficiency, longevity, and suitability for a DIY environment.</p>
+<h3 id="3-1-comparative-analysis-of-electrolyzer-technologies">3.1. Comparative Analysis of Electrolyzer Technologies</h3>
+<p>Three primary technologies are available for small-scale applications:</p>
+<p><strong>1. Proton Exchange Membrane (PEM):</strong>
+PEM electrolyzers are highly favored for renewable energy integration due to their high efficiency and fast response time, which perfectly matches the intermittent nature of solar power (HPS Picea, 2024). They are inherently modular and scale well, making them ideal for small, residential, or garage-level applications (Finding 9). Crucially, modular PEM kits are commercially available, allowing for straightforward integration into a DIY project (Fuel Cell Earth, 2024; Senzahydrogen, 2024).</p>
+<p><strong>2. Alkaline:</strong>
+Alkaline electrolyzers offer a lower initial investment cost, making them attractive for budget-conscious DIY builders (HPS Picea, 2024; Finding 7). However, they are generally slower to respond to fluctuating power inputs compared to PEM systems, which can be a drawback when relying on variable solar power.</p>
+<p><strong>3. Anion Exchange Membrane (AEM):</strong>
+AEM technology is positioned as a scalable, middle-ground solution. Commercialized AEM Electrolyzers are increasingly available and are designed specifically for converting renewable electricity into green hydrogen (Finding 7). Companies are offering commercialized AEM solutions tailored for residential use (Finding 6; Finding 3).</p>
+<p><strong>Synthesis and Recommendation:</strong> While Alkaline offers the lowest upfront cost, the <strong>PEM technology</strong> provides the optimal balance of high efficiency, rapid response to solar fluctuations, and commercial modular availability, making it the superior choice for a high-performance, garage-buildable system.</p>
+<h3 id="3-2-optimizing-operational-efficiency">3.2. Optimizing Operational Efficiency</h3>
+<p>For maximum efficiency, the system must be designed to operate directly from the DC power supplied by the solar array. This minimizes the energy losses that occur when converting DC power to AC power and back again (v-electrolyzer.de, 2024). The integration of the PEM electrolyzer directly with the solar array, potentially via a specialized DC-coupled charge controller, is the most efficient operational design.</p>
+<h2 id="4-phase-3-energy-utilization-completing-the-closed-loop">4. Phase 3: Energy Utilization – Completing the Closed Loop</h2>
+<p>The hydrogen produced must be stored and then converted back into usable energy. This final stage is completed by the fuel cell.</p>
+<h3 id="4-1-the-role-of-the-fuel-cell">4.1. The Role of the Fuel Cell</h3>
+<p>A fuel cell is an electrochemical device that acts as the inverse of the electrolyzer. It combines stored hydrogen ($\text{H}_2$) with oxygen ($\text{O}_2$) from the air to produce electricity, water ($\text{H}_2\text{O}$), and heat.</p>
+<p>The concept of a complete closed-loop system is best realized through integrated Home Hydrogen Energy Systems (HPS) (HPS Picea, 2024). These systems are designed to combine the solar panels, electrolyzers, storage, and fuel cells into a single, modular, self-sufficient unit (HPS Picea, 2024). The availability of specific fuel cell units, such as those designed to work with PEM electrolyzers (Senzahydrogen, 2024), confirms that the necessary components for both production and consumption are available within the same commercial ecosystems (Fuel Cell Earth, 2024).</p>
+<h3 id="4-2-maximizing-overall-system-efficiency-chp">4.2. Maximizing Overall System Efficiency (CHP)</h3>
+<p>To truly maximize the utility of the system, the fuel cell should be paired with Combined Heat and Power (CHP) capabilities. Fuel cells inherently generate significant waste heat. By capturing this heat and utilizing it for domestic purposes (e.g., water heating), the overall system efficiency can be dramatically boosted, potentially exceeding 85% (Finding 2; Finding 5). This integration transforms the system from a simple power generator into a comprehensive, energy-efficient home utility.</p>
+<h2 id="5-hydrogen-storage-safety-and-efficiency-in-the-garage">5. Hydrogen Storage: Safety and Efficiency in the Garage</h2>
+<figure class="section-image" data-img-url="https://discoverhomesteading.com/wp-content/uploads/2025/07/ChatGPT-Image-7-juil.-2025-01_02_18.png"><img src="https://discoverhomesteading.com/wp-content/uploads/2025/07/ChatGPT-Image-7-juil.-2025-01_02_18.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>Hydrogen is a highly energetic and volatile gas. Therefore, the storage method is perhaps the most critical safety and efficiency consideration for a garage-based build.</p>
+<h3 id="5-1-compressed-gas-storage-the-conventional-method">5.1. Compressed Gas Storage (The Conventional Method)</h3>
+<p>The simplest and most common method is storing hydrogen in high-pressure steel cylinders, utilizing standard high-pressure fittings (Finding 1; Finding 8). This method is straightforward and readily available. However, it presents challenges: it requires careful management of supply and demand fluctuations, and the high-pressure nature necessitates stringent safety protocols and robust infrastructure (Finding 8).</p>
+<h3 id="5-2-metal-hydride-storage-the-optimal-solution">5.2. Metal Hydride Storage (The Optimal Solution)</h3>
+<p>For a system prioritizing maximum safety and efficiency in a constrained environment like a garage, <strong>metal hydride storage</strong> is the superior recommendation (Finding 9; Finding 5).</p>
+<p>Metal hydrides (such as those based on magnesium or titanium) chemically absorb and release hydrogen. This method stores hydrogen in a solid chemical form, eliminating the risk associated with high-pressure gas storage. The process is inherently safer, requiring less complex pressure regulation and significantly reducing the risk of catastrophic failure in a residential setting (Finding 5). While the initial cost of metal hydride units may be higher, the safety and operational benefits make it the most responsible choice for a garage build.</p>
+<h2 id="6-safety-implementation-and-regulatory-requirements">6. Safety, Implementation, and Regulatory Requirements</h2>
+<p>Given the inherent risks associated with hydrogen, safety protocols are not merely recommendations—they are absolute prerequisites for any garage-based build.</p>
+<h3 id="6-1-essential-safety-protocols">6.1. Essential Safety Protocols</h3>
+<p>The system must be designed with multiple layers of protection. This includes the use of high-purity distilled water (to prevent corrosion and contamination), certified hydrogen storage tanks and high-pressure fittings, and stainless steel tubing throughout the system (Finding 7).</p>
+<p>Crucially, the installation must incorporate:
+1.  <strong>Adequate Ventilation:</strong> Hydrogen is lighter than air and can accumulate in confined spaces. Proper ventilation is non-negotiable (Finding 8).
+2.  <strong>Leak Detection:</strong> Hydrogen-specific leak detectors must be installed throughout the system area (Finding 8).
+3.  <strong>Emergency Shutoff:</strong> A clearly accessible, immediate emergency shutoff switch for the entire system is mandatory (Finding 8).</p>
+<h3 id="6-2-implementation-roadmap-the-most-efficient-build-path">6.2. Implementation Roadmap: The Most Efficient Build Path</h3>
+<p>Based on the synthesis of efficiency, safety, and component availability, the definitive recommendation for the most efficient and accessible garage build is as follows:</p>
+<p><strong>The Integrated PEM-Hydride System:</strong></p>
+<ol>
+<li><strong>Power/Production:</strong> Utilize a modular, integrated PEM electrolyzer kit (e.g., SENZA SZPE series or commercial AEM kits) powered by a small-scale, off-grid solar kit (Finding 1; Finding 9). This maximizes efficiency and utilizes readily available, high-performance components.</li>
+<li><strong>Storage:</strong> Implement a dedicated metal hydride storage unit (Finding 5).</li>
+<li><strong>Utilization:</strong> Pair the storage and electrolyzer system with a corresponding PEM fuel cell unit (Fuel Cell Earth, 2024) to close the loop.</li>
+<li><strong>Optimization:</strong> Integrate a CHP system to capture waste heat, pushing the overall efficiency past 85% (Finding 5).</li>
+</ol>
+<p>This path leverages the high efficiency of PEM technology, the safety of metal hydride storage, and the modularity of commercial off-the-shelf components, directly answering the question with a practical, high-performance solution.</p>
+<h2 id="7-conclusion">7. Conclusion</h2>
+<figure class="section-image" data-img-url="https://www.sunhub.com/blog/wp-content/uploads/2025/09/How-to-build-a-DIY-off-grid-solar-system-in-2025-1024x678.webp"><img src="https://www.sunhub.com/blog/wp-content/uploads/2025/09/How-to-build-a-DIY-off-grid-solar-system-in-2025-1024x678.webp" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The research unequivocally confirms that a complete, closed-loop solar-to-hydrogen system is <strong>highly feasible</strong> and buildable in a garage using off-the-shelf components, provided the scope is limited to a small, modular, or educational scale.</p>
+<p>The most efficient and safest method is the <strong>Integrated PEM-Hydride System</strong>. This system leverages the rapid response and high efficiency of PEM electrolyzers, minimizes safety risks through the use of metal hydride storage, and completes the cycle using a corresponding PEM fuel cell. By prioritizing integrated designs (like Artificial Photosynthesis or DSHG) and incorporating CHP features, the system moves beyond simple energy storage to become a highly efficient, self-sufficient home energy utility.</p>
+<p>The transition from theoretical concept to practical garage build is achievable, but it requires strict adherence to safety protocols, careful component selection, and a commitment to integrated, high-performance technology. The future of decentralized green energy is not just in the solar panel, but in the chemical storage and utilization of the hydrogen it creates.</p>
+
+    <div class="sources-panel">
+<details>
+<summary>Sources (25)</summary>
+<div class="sources-list">
+<a href="https://sunergyhub.com/diy-solar-system/" target="_blank" rel="noopener noreferrer"><span class="snum">1.</span><span>DIY Solar System (2026) - How to Build a Reliable Off-Grid Setup</span><span class="sdomain">sunergyhub.com</span></a>
+<a href="https://www.sunhub.com/blog/diy-off-grid-solar-system-2025-guide/" target="_blank" rel="noopener noreferrer"><span class="snum">2.</span><span>How to build a DIY off-grid solar system in 2025 - sunhub.com</span><span class="sdomain">sunhub.com</span></a>
+<a href="https://discoverhomesteading.com/off-grid-solar-system-setup-2025/" target="_blank" rel="noopener noreferrer"><span class="snum">3.</span><span>Off-grid solar system setup (2025): cost &amp; DIY guide</span><span class="sdomain">discoverhomesteading.com</span></a>
+<a href="https://www.sunstore.co.uk/product-category/solar-panel-kits/diy-solar-systems/" target="_blank" rel="noopener noreferrer"><span class="snum">4.</span><span>DIY Solar Systems &amp; DIY Solar Panels. UK-wide Delivery.</span><span class="sdomain">sunstore.co.uk</span></a>
+<a href="https://www.sunstore.co.uk/product-category/solar-panel-kits/off-grid-solar-systems/small-off-grid-solar-kits/" target="_blank" rel="noopener noreferrer"><span class="snum">5.</span><span>Small Off-grid Solar Panel Kits and Systems. Includes Batteries</span><span class="sdomain">sunstore.co.uk</span></a>
+<a href="https://v-electrolyzer.de/en/home-hydrogen-refueling-station-ve-h2-heat/" target="_blank" rel="noopener noreferrer"><span class="snum">6.</span><span>Home hydrogen refueling station H2 Heat - v-electrolyzer.de</span><span class="sdomain">v-electrolyzer.de</span></a>
+<a href="https://www.fuelcellearth.com/fuel-cell-products/horizon-mini-pem-electrolyzer/" target="_blank" rel="noopener noreferrer"><span class="snum">7.</span><span>Horizon PEM Blue Electrolyzer - Fuel Cell Earth</span><span class="sdomain">fuelcellearth.com</span></a>
+<a href="https://www.sunstore.co.uk/product-category/solar-panel-kits/off-grid-solar-systems/" target="_blank" rel="noopener noreferrer"><span class="snum">8.</span><span>Complete Off-grid Solar Kits with Batteries. Technical Support.</span><span class="sdomain">sunstore.co.uk</span></a>
+<a href="https://solardiy.co.uk/" target="_blank" rel="noopener noreferrer"><span class="snum">9.</span><span>Solar &amp; Wind DIY | Build Your Own Off-Grid Power System</span><span class="sdomain">solardiy.co.uk</span></a>
+<a href="https://www.hyto-life.com/application/hps-green-home-energy" target="_blank" rel="noopener noreferrer"><span class="snum">10.</span><span>Home Hydrogen Energy System for Self-Sufficiency | HPS Picea</span><span class="sdomain">hyto-life.com</span></a>
+<a href="https://oncoreenergy.com/solar-hydrogen-generator-converting-sunlight-to-storable-hydrogen/" target="_blank" rel="noopener noreferrer"><span class="snum">11.</span><span>Solar Hydrogen Generator: Converting Sunlight into Storable Hydrogen Power</span><span class="sdomain">oncoreenergy.com</span></a>
+<a href="https://nenpower.com/blog/how-much-does-solar-hydrogen-production-equipment-cost/" target="_blank" rel="noopener noreferrer"><span class="snum">12.</span><span>How much does solar hydrogen production equipment cost</span><span class="sdomain">nenpower.com</span></a>
+<a href="https://solarenergyconcepts.co.uk/practical-and-diy/solar-shed-or-garage/" target="_blank" rel="noopener noreferrer"><span class="snum">13.</span><span>Garden Solar Panels UK: Shed, Garage &amp; Plug-in Options (2026)</span><span class="sdomain">solarenergyconcepts.co.uk</span></a>
+<a href="https://offgridauthority.com/diy-solar-garage-workshop-guide/" target="_blank" rel="noopener noreferrer"><span class="snum">14.</span><span>DIY Solar for Your Garage &amp; Workshop (2026)</span><span class="sdomain">offgridauthority.com</span></a>
+<a href="https://senzahydrogen.com/how-to-build-a-simple-solar-hydrogen-system/" target="_blank" rel="noopener noreferrer"><span class="snum">15.</span><span>How To Build A Simple Solar Hydrogen System</span><span class="sdomain">senzahydrogen.com</span></a>
+<a href="https://ecohomegenius.com/residential-hydrogen-fuel-cell-systems/" target="_blank" rel="noopener noreferrer"><span class="snum">16.</span><span>Powering Your Home: DIY Hydrogen Fuel Cell Guide</span><span class="sdomain">ecohomegenius.com</span></a>
+<a href="https://www.alternative-energies.net/hydrogen-energy-storage-for-families-cleaner-safer-smarter/" target="_blank" rel="noopener noreferrer"><span class="snum">17.</span><span>Hydrogen Energy Storage for Families: Cleaner, Safer, Smarter</span><span class="sdomain">alternative-energies.net</span></a>
+<a href="https://enapter.com/en/blog/green-h2-for-homeowners-the-lowdown-on-private-residential-hydrogen/" target="_blank" rel="noopener noreferrer"><span class="snum">18.</span><span>Green H2 for homeowners - the lowdown on private residential hydrogen</span><span class="sdomain">enapter.com</span></a>
+<a href="https://offshorewindma.com/2026/05/20/tools-equipment-guide-setting-up-a-diy-home-hydrogen-generator-for-clean-energy-storage/" target="_blank" rel="noopener noreferrer"><span class="snum">19.</span><span>DIY Home Hydrogen Generator: Tools &amp; Equipment Guide</span><span class="sdomain">offshorewindma.com</span></a>
+<a href="https://www.hyto-life.com/application/lavo-home-hydrogen-system" target="_blank" rel="noopener noreferrer"><span class="snum">20.</span><span>Lavo: Our Safe Metal Hydride Home Hydrogen Storage Solution</span><span class="sdomain">hyto-life.com</span></a>
+<a href="https://hydroride.eu/hydrogen-generator-storage-system/" target="_blank" rel="noopener noreferrer"><span class="snum">21.</span><span>Hydrogen Generator &amp; Storage System | Produce Hydrogen at home | Safe ...</span><span class="sdomain">hydroride.eu</span></a>
+<a href="https://interestingengineering.com/energy/battery-free-artificial-photosynthesis-solar-fuel" target="_blank" rel="noopener noreferrer"><span class="snum">22.</span><span>Electrolyzer design helps stable solar fuel production under variable light</span><span class="sdomain">interestingengineering.com</span></a>
+<a href="https://www.nature.com/articles/s41597-025-05951-4" target="_blank" rel="noopener noreferrer"><span class="snum">23.</span><span>Clean technology cost projections: investment and levelized costs of ...</span><span class="sdomain">nature.com</span></a>
+<a href="https://link.springer.com/article/10.1007/s12667-025-00748-1" target="_blank" rel="noopener noreferrer"><span class="snum">24.</span><span>Performance analysis of solar-based multi-generation system with ...</span><span class="sdomain">link.springer.com</span></a>
+<a href="https://pubs.rsc.org/en/content/articlehtml/2023/ee/d3ee01697h" target="_blank" rel="noopener noreferrer"><span class="snum">25.</span><span>Comparative techno-economic analysis of different PV-assisted direct ...</span><span class="sdomain">pubs.rsc.org</span></a>
+</div>
+</details>
+</div>
+
+    <div class="chat-cta"><button id="btn-chat-about" class="chat-cta-btn" data-research-id="rp-8999673e8644"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Discuss</span></button><div class="chat-cta-hint">Opens a new chat with this report as context.</div></div>
+  </main>
+</div>
+
+<div class="report-footer">
+  Generated by Odysseus Deep Research · June 18, 2026 at 21:57
+</div>
+
+<script>
+(function() {
+  // ESC closes the report tab. window.close() works when the tab was
+  // opened via window.open() (which is how the panel launches it). If the
+  // browser blocks self-close (rare — e.g. report opened by direct URL),
+  // fall back to history.back() so ESC still feels responsive.
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    // Don't hijack ESC while typing in a field or with an open dropdown.
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    var menu = document.getElementById('export-menu');
+    if (menu && menu.classList.contains('open')) { menu.classList.remove('open'); return; }
+    try { window.close(); } catch (err) {}
+    // window.close() is a no-op when the tab wasn't script-opened; in that
+    // case fall back to navigation so the key isn't ignored.
+    setTimeout(function() { if (!window.closed) history.back(); }, 50);
+  });
+
+  // Export dropdown toggle
+  var exportBtn = document.getElementById('btn-export');
+  var exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { exportMenu.classList.remove('open'); });
+
+  // Save as PDF (browser print)
+  document.getElementById('btn-pdf').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    window.print();
+  });
+
+  // Download HTML
+  document.getElementById('btn-html').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = document.title.replace(/[^a-z0-9]+/gi, '-').substring(0, 60) + '.html';
+    a.click();
+  });
+
+  // Per-image hide — fades the image out, then POSTs to the backend so
+  // future renders of this report skip the URL. Falls back to a silent
+  // no-op if there's no session_id (e.g. the report was opened from a
+  // saved-HTML download where the backend isn't reachable).
+  var __sessionId = "rp-8999673e8644";
+  // Unused scraped images — the reroll pool. Each is used at most once.
+  var __spareImages = ["https://senzahydrogen.com/wp-content/uploads/2023/05/simple-solar-hydrogen-system.png", "https://www.alternative-energies.net/wp-content/uploads/2025/04/Hydrogen-storage-system.jpg", "https://enapter.com/wp-content/uploads/2024/09/Enapter_BlogPost_KeyVisual_HomeUse_1920x640_3c_1.jpg", "https://offshorewindma.com/wp-content/uploads/2026/05/Tools-Equipment-Guide-Setting-Up-a-DIY-Home-Hydrogen-Generator-for-Clean-Energy-Storage-6a0d9f2ca4f46.jpg", "https://cms.interestingengineering.com/wp-content/uploads/2026/06/resizeplus_126686.jpg", "https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41597-025-05951-4/MediaObjects/41597_2025_5951_Fig1_HTML.png", "https://media.springernature.com/m685/springer-static/image/art%3A10.1007%2Fs12667-025-00748-1/MediaObjects/12667_2025_748_Fig1_HTML.png"];
+
+  // Persist a rejected URL so future renders skip it.
+  function __persistHide(url) {
+    if (!__sessionId || !url) return;
+    fetch('/api/research/' + encodeURIComponent(__sessionId) + '/hide-image', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url }),
+    }).catch(function(err) { console.warn('hide-image POST failed', err); });
+  }
+
+  // Once the pool is empty, there's nothing to swap to — hide all reroll btns.
+  function __syncRerollAvailability() {
+    if (__spareImages.length === 0) {
+      document.querySelectorAll('.img-reroll-btn').forEach(function(b) { b.disabled = true; });
+    }
+  }
+
+  document.querySelectorAll('.img-hide-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var url = wrap.dataset.imgUrl;
+      wrap.classList.add('fading');
+      setTimeout(function() { wrap.remove(); }, 280);
+      __persistHide(url);
+    });
+  });
+
+  // Reroll — swap the current image for the next unused scraped one, and
+  // persist-hide the rejected URL so it won't resurface on reload.
+  document.querySelectorAll('.img-reroll-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      // Per-button busy flag — a rapid double-click would otherwise both
+      // shift the spare pool, but only the second probe's image would land,
+      // silently consuming the first one. Bail until finish() clears it.
+      if (btn.dataset._busy === '1') return;
+      if (__spareImages.length === 0) { btn.disabled = true; return; }
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      btn.dataset._busy = '1';
+      var oldUrl = wrap.dataset.imgUrl;
+      var newUrl = __spareImages.shift();
+      btn.classList.add('spinning');
+      // Swap once the new image has loaded (or failed) to avoid a flash of empty.
+      var probe = new Image();
+      var done = false;
+      var finish = function(ok) {
+        if (done) return; done = true;
+        btn.classList.remove('spinning');
+        delete btn.dataset._busy;
+        if (ok) {
+          img.src = newUrl;
+          wrap.dataset.imgUrl = newUrl;
+          __persistHide(oldUrl);
+        } else {
+          // Bad candidate — persist-hide it so it can't resurface on reload,
+          // then try the next spare if any remain. Busy flag already cleared
+          // so the synthetic click below proceeds.
+          __persistHide(newUrl);
+          if (__spareImages.length) btn.click();
+        }
+        __syncRerollAvailability();
+      };
+      probe.onload = function() { finish(true); };
+      probe.onerror = function() { finish(false); };
+      probe.src = newUrl;
+    });
+  });
+  __syncRerollAvailability();
+
+  // "Show hidden (N)" button — clears the hidden_images list on the
+  // server, then reloads the page so all images come back.
+  var restoreBtn = document.getElementById('btn-restore-images');
+  if (restoreBtn && __sessionId) {
+    restoreBtn.addEventListener('click', function() {
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = 'Restoring…';
+      fetch('/api/research/' + encodeURIComponent(__sessionId) + '/unhide-images', {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function() { window.location.reload(); })
+        .catch(function(err) {
+          restoreBtn.disabled = false;
+          restoreBtn.textContent = 'Failed — retry?';
+          console.warn('unhide-images POST failed', err);
+        });
+    });
+  }
+
+  // TOC: explicit smooth-scroll handler (some browsers/anchor plugins
+  // bypass the CSS `scroll-behavior: smooth` rule on hash clicks).
+  // Also keeps the URL hash updated and toggles an `.active` highlight.
+  var tocLinks = document.querySelectorAll('.toc-sidebar nav a[href^="#"]');
+  tocLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var id = link.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  // Highlight the TOC entry that matches whichever heading is currently
+  // closest to the top of the viewport. IntersectionObserver keeps it
+  // cheap (no scroll listener spam).
+  var tocMap = {};
+  tocLinks.forEach(function(link) {
+    tocMap[link.getAttribute('href').slice(1)] = link;
+  });
+  var activeId = null;
+  function setActive(id) {
+    if (id === activeId) return;
+    if (activeId && tocMap[activeId]) tocMap[activeId].classList.remove('active');
+    if (id && tocMap[id]) tocMap[id].classList.add('active');
+    activeId = id;
+  }
+  var headings = document.querySelectorAll('.content h2[id], .content h3[id]');
+  if (headings.length && 'IntersectionObserver' in window) {
+    var visible = new Set();
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        if (en.isIntersecting) visible.add(en.target.id);
+        else visible.delete(en.target.id);
+      });
+      // Pick the visible heading that's furthest down in document order
+      // before the current scroll — i.e. the section we're reading.
+      var current = null;
+      for (var i = 0; i < headings.length; i++) {
+        if (visible.has(headings[i].id)) { current = headings[i].id; break; }
+      }
+      if (current) setActive(current);
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+    headings.forEach(function(h) { io.observe(h); });
+  }
+
+  // Chat about this research — POST to spinoff and redirect to the new chat
+  var chatBtn = document.getElementById('btn-chat-about');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function() {
+      var researchId = chatBtn.dataset.researchId;
+      if (!researchId) return;
+      var origLabel = chatBtn.innerHTML;
+      chatBtn.disabled = true;
+      chatBtn.innerHTML = '<span>Creating chat…</span>';
+      fetch('/api/research/spinoff/' + encodeURIComponent(researchId), {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(d) {
+            throw new Error(d && d.detail ? d.detail : ('HTTP ' + res.status));
+          }, function() { throw new Error('HTTP ' + res.status); });
+        }
+        return res.json();
+      }).then(function(data) {
+        if (!data || !data.session_id) {
+          throw new Error('Server did not return a session id');
+        }
+        var url = '/#' + data.session_id;
+        var opened = false;
+        // The report typically opens in a new tab — if we have access to the
+        // original Odysseus tab, navigate it and close this report tab so the
+        // user lands directly in the new chat.
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.href = url;
+            window.opener.location.reload();
+            window.opener.focus();
+            opened = true;
+            window.close();
+          }
+        } catch (e) { /* cross-origin or detached opener — fall through */ }
+        if (!opened) {
+          // No opener (report was opened directly via URL) — open the chat in a
+          // new tab so the report stays available.
+          var w = window.open(url, '_blank');
+          if (w) {
+            chatBtn.disabled = false;
+            chatBtn.innerHTML = '<span>Chat opened in new tab</span>';
+          } else {
+            // Popup blocked — navigate this tab as a last resort.
+            window.location.href = url;
+            window.location.reload();
+          }
+        }
+      }).catch(function(err) {
+        chatBtn.disabled = false;
+        chatBtn.innerHTML = origLabel;
+        alert('Could not start follow-up chat: ' + err.message);
+      });
+    });
+  }
+})();
+
+// Colorize comparison table cells
+if (document.body.classList.contains('category-comparison')) {
+  const pos = /^(yes|excellent|best|great|strong|fast|high|superior|winner|free|unlimited|native|full|advanced|built[- ]in|✓|✅|⭐)/i;
+  const neg = /^(no|none|poor|weak|slow|low|limited|lacking|missing|basic|minimal|✗|❌|N\/A$)/i;
+  const mid = /^(moderate|average|fair|partial|some|decent|okay|mixed|varies|depends)/i;
+  document.querySelectorAll('.content table td').forEach(td => {
+    if (td.cellIndex === 0) return;
+    const t = td.textContent.trim();
+    if (pos.test(t)) td.classList.add('cmp-pos');
+    else if (neg.test(t)) td.classList.add('cmp-neg');
+    else if (mid.test(t)) td.classList.add('cmp-mid');
+  });
+}
+</script>
+
+
+</body></html>

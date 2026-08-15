@@ -53,6 +53,18 @@ See the header comments in [`scripts/install_local_ai.sh`](scripts/install_local
 
 ---
 
+## Part 3, Comparing models
+
+**What it covers:** the same hard research task run across nine model and
+quantisation combinations on the same machine, unedited, so you can see for
+yourself how small you can go before it stops being useful.
+
+| File | Location |
+|------|----------|
+| Test results and method | [`docs/model-tests/`](docs/model-tests/) |
+
+---
+
 ## Going further
 
 **What it covers:** the ideas behind the commands. What a model actually is, how
