@@ -91,12 +91,18 @@ jobs:
     container: ubuntu:24.04
     steps:
       - name: Dependencies
-        run: apt-get update -qq && apt-get install -y -qq git ca-certificates
+        run: apt-get update -qq && apt-get install -y -qq git ca-certificates systemd
       - uses: actions/checkout@v4
       - name: A hand-edited service file survives a re-run
         run: bash tests/test_unit_preservation.sh
       - name: The uninstaller reverses an install without collateral damage
         run: bash tests/test_uninstall_reversal.sh
+      - name: Every hardware path the installer claims to support
+        # Runs the real installer against stubbed hardware, so the branches
+        # nobody can safely test for real (a mismatched NVIDIA driver, an 8 GB
+        # card asked to hold a 17 GB model, SSH on a non-standard port,
+        # Resizable BAR switched off) are exercised on every push.
+        run: bash tests/test_install_paths.sh
 
   line-endings:
     name: no CRLF in shell scripts

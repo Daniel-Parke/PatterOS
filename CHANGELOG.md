@@ -84,10 +84,16 @@ shipping, and two of them could cost you an evening.
 - The Part 2 manual setup guide and the Local AI Handbook, published in `docs/`.
   The installer's "see the guide, Step 10" messages now point at something you
   can actually open.
-- A test suite: 25 assertions across service-file preservation, uninstall
-  reversal, and agreement between the scripts and the documentation. Continuous
-  integration runs shellcheck, the tests, and a check that the Part 1 guide has
-  not gone stale.
+- A test suite: 82 assertions. Alongside service-file preservation, uninstall
+  reversal and script-versus-documentation agreement, the installer itself is
+  now driven through all ten hardware paths it claims to support, against
+  stubbed hardware. That means the branches nobody can safely test for real get
+  exercised on every push: a mismatched NVIDIA driver that must not be
+  reinstalled, an 8 GB card asked to hold a 17 GB model, SSH on a non-standard
+  port, Resizable BAR switched off, an old Mesa, a missing download tool, and a
+  disk too full to continue. The generated service files are also checked by
+  systemd's own validator. Continuous integration runs all of it, plus
+  shellcheck on two versions and a staleness check on the Part 1 guide.
 
 ### Changed
 
