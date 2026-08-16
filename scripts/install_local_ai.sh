@@ -45,6 +45,8 @@
 #     LLAMA_VERSION=<tag>  llama.cpp version to build   (default: a tested tag)
 #     CTX=<tokens>         context window per model     (default: 16384)
 #     NGL=<layers>         layers to put on the GPU     (default: automatic)
+#     JOBS=<n>             compilers to run at once     (default: as many as
+#                          your cores and free memory allow, whichever is lower)
 #
 #  Re-running is safe AND smart: a healthy NVIDIA driver is never reinstalled,
 #  a finished build is reused, service files you edited yourself are kept, and
@@ -93,6 +95,7 @@ PORT_ODY=7000            # the Odysseus workspace
 STAMP_DIR="/var/lib/patteros"   # what PatterOS changed, so it can be undone
 CTX="${CTX:-16384}"      # context window per model (bounded to protect memory)
 NGL_OVERRIDE="${NGL:-}"  # layers to put on the GPU; empty = decide automatically
+JOBS_OVERRIDE="${JOBS:-}"  # compilers to run at once; empty = cores vs memory
 LACT_VER="0.10.0"        # GPU power/fan tuning GUI (guide, Step 12)
 LACT_DEB_URL="https://github.com/ilya-zlobintsev/LACT/releases/download/v${LACT_VER}/lact-${LACT_VER}-0.amd64.ubuntu-2404.deb"
 
@@ -165,6 +168,11 @@ REAL_USER="${SUDO_USER:-}"
 [[ -n "${REAL_USER}" && "${REAL_USER}" != "root" ]] || die "Run via sudo as your normal user:  sudo bash install_local_ai.sh"
 USER_HOME="$(getent passwd "${REAL_USER}" | cut -d: -f6)"
 [[ -d "${USER_HOME}" ]] || die "Could not find the home directory for ${REAL_USER}."
+# Everything this script creates or rebuilds hangs off USER_HOME, including
+# `rm -rf "${LLAMA_DIR}/build"`. With a home of "/" those become paths at the top
+# of the filesystem, so refuse it here rather than find out later. The matching
+# check in uninstall_local_ai.sh is what keeps its safe_rm guard honest.
+[[ "${USER_HOME}" != "/" ]] || die "The home directory for ${REAL_USER} is '/', which is not a usable home."
 as_user(){ sudo -u "${REAL_USER}" -H "$@"; }     # run a command as the real user
 hf_user(){ as_user env PATH="${USER_HOME}/.local/bin:${PATH}" "$@"; }
 
@@ -465,6 +473,134 @@ preflight_models(){
   return 0
 }
 
+# Is a package installed?
+#
+# Not `dpkg -l ... | grep -q`. Under `set -o pipefail`, grep -q exits at its
+# first match and closes the pipe, so a producer that is still writing dies of
+# SIGPIPE and the pipeline reports 141 even though the match was found. It bites
+# in proportion to how much output there is, which makes it look intermittent.
+# The uninstaller hit exactly this and silently skipped a purge, so the same
+# pattern is avoided here on principle.
+pkg_installed(){
+  local out
+  out="$(dpkg -l "$1" 2>/dev/null || true)"
+  grep -qE "^ii[[:space:]]+$1[[:space:]]" <<<"${out}"
+}
+
+# Record packages that were absent before this run and are present after it, so
+# the uninstaller can remove what we added and nothing else.
+#
+# This is the same principle the group-membership step already follows, and it
+# was missing here with worse consequences. `--packages` purged a fixed list
+# including mesa-vulkan-drivers, which is the actual graphics driver on an AMD or
+# Intel desktop and which apt-cache shows xserver-xorg depending on; `--drivers`
+# purged every nvidia-*, libnvidia-* and cuda-* package on the machine, which on
+# this test rig is 79 packages spanning five driver series it never touched, then
+# ran autoremove on top. Neither is a reversal of an install; both can leave a
+# machine without a display.
+record_pkgs(){ # $@ = packages we intended to install
+  local p f="${STAMP_DIR}/packages-added"
+  mkdir -p "${STAMP_DIR}"
+  for p in "$@"; do
+    [[ -n "${p}" ]] || continue
+    pkg_installed "${p}" || continue
+    grep -qxF -- "${p}" "${f}" 2>/dev/null && continue
+    printf '%s\n' "${p}" >> "${f}"
+  done
+}
+
+# Which of these are not installed yet. Call before apt, pass the result to
+# record_pkgs after, so a package the user already had is never recorded as ours.
+pkgs_absent(){
+  local p
+  for p in "$@"; do pkg_installed "${p}" || printf '%s\n' "${p}"; done
+}
+
+# What, if anything, is already listening on a port. Empty means free.
+port_owner(){
+  command -v ss >/dev/null 2>&1 || return 0
+  ss -lntp 2>/dev/null | awk -v pat=":$1\$" '$4 ~ pat {print $NF; exit}'
+}
+# Surfaced in the plan, where a port can still be changed for free with 'c'.
+# Worth the few lines because a busy port is otherwise reported as a driver
+# problem in phase 5, sending the user off to debug the wrong thing.
+# A re-run finds PatterOS's own service on the port, which is normal, so that
+# case is reported calmly rather than as a clash.
+port_notes(){
+  local p name svc owner
+  for spec in "${PORT_LLAMA}|the model server|llama.service" "${PORT_ODY}|the Odysseus workspace|odysseus.service"; do
+    IFS='|' read -r p name svc <<<"${spec}"
+    [[ "${svc}" == "odysseus.service" && "${WANT_ODY}" != "yes" ]] && continue
+    owner="$(port_owner "${p}")"
+    [[ -z "${owner}" ]] && continue
+    if systemctl is-active --quiet "${svc}" 2>/dev/null; then
+      echo "  Port ${p}:      in use by PatterOS's own ${svc}; it will be restarted."
+    else
+      echo "  Port ${p}:      ALREADY IN USE by ${owner}, which is not PatterOS."
+      echo "                 ${name} cannot start while that holds the port. Press 'c' below to"
+      echo "                 choose a different port, or stop that program first."
+    fi
+  done
+  return 0
+}
+
+# Wait for a service to settle, then say which of three things happened.
+#
+# `systemctl is-active` the instant after `restart` is worthless as a health
+# check: these units are Type=simple, so systemd calls them active the moment
+# the process is forked. A service whose Python dies on an import error two
+# seconds later therefore reports "active", and the installer used to announce
+# success and print a URL for a workspace that was in a permanent crash loop.
+#
+# Restart=on-failure makes that failure hard to catch at a single instant too,
+# because the unit alternates between activating and active while looping. The
+# restart counter is the reliable signal: if it moves, the service is dying.
+#
+# An answer on the port is never taken as proof on its own. If another program
+# owns the port it answers too, and reporting that as a healthy PatterOS service
+# would be worse than reporting nothing. The unit must be active AND the port
+# must answer before this says "serving".
+#
+# Echoes one of: serving | running | looping | dead
+service_health(){
+  local unit="$1" port="$2" wait_s="${3:-45}" i restarts0 restarts down=0
+  restarts0="$(systemctl show -p NRestarts --value "${unit}" 2>/dev/null || true)"
+  [[ "${restarts0}" =~ ^[0-9]+$ ]] || restarts0=0
+  for (( i=0; i<wait_s; i++ )); do
+    # A moving restart counter is the giveaway for a service that starts, dies,
+    # and is started again, which no single-instant check can distinguish from
+    # a healthy start.
+    restarts="$(systemctl show -p NRestarts --value "${unit}" 2>/dev/null || true)"
+    [[ "${restarts}" =~ ^[0-9]+$ ]] || restarts=0
+    if (( restarts > restarts0 )); then echo looping; return 0; fi
+
+    if systemctl is-active --quiet "${unit}" 2>/dev/null; then
+      down=0
+      if curl -fsS --max-time 2 "http://127.0.0.1:${port}/v1/models" >/dev/null 2>&1 \
+         || curl -fsS --max-time 2 "http://127.0.0.1:${port}/" >/dev/null 2>&1; then
+        echo serving; return 0
+      fi
+    else
+      # Allow a couple of samples of grace: systemctl returns as soon as the
+      # unit is activating, and a slow machine can lag a moment behind.
+      down=$(( down + 1 ))
+      (( down > 3 )) && { echo dead; return 0; }
+    fi
+    sleep 1
+  done
+  systemctl is-active --quiet "${unit}" 2>/dev/null && echo running || echo dead
+}
+
+# Show the actual error rather than telling the user to go and find it. Someone
+# who has just watched a 15-minute build does not want a homework assignment,
+# and the real cause is nearly always in the last few lines.
+service_why(){
+  local unit="$1"
+  warn "The last few lines of its log, which usually say why:"
+  journalctl -u "${unit}" -n 12 --no-pager 2>/dev/null \
+    | sed 's/^/      /' || info "      (run: journalctl -u ${unit} -n 40 --no-pager)"
+}
+
 show_plan(){
   echo
   echo -e "${B}Plan${N}"
@@ -483,6 +619,7 @@ show_plan(){
   if [[ "${SKIP_DRIVERS}" == "yes" ]]; then skips+=" drivers"; fi
   if [[ "${SKIP_BUILD}"   == "yes" ]]; then skips+=" build";   fi
   if [[ -n "${skips}" ]]; then echo "  Skipping:     ${skips}"; fi
+  port_notes
   return 0
 }
 valid_port(){ [[ "$1" =~ ^[0-9]+$ ]] && (( $1 >= 1024 && $1 <= 65535 )); }
@@ -543,7 +680,29 @@ fi
 # ======================================================================== 1 ==
 step "1/9  System packages"
 export DEBIAN_FRONTEND=noninteractive
-apt-get update -qq
+# A failing refresh must not end the run. `apt-get update` exits non-zero if ANY
+# configured repository fails, and a third-party repo with a missing or expired
+# signing key is very common: editors, Docker, Spotify, old PPAs. None of that
+# affects whether the packages below can be installed from the lists already on
+# disk. This used to be a bare call, so with `set -e` one unrelated broken repo
+# ended the install at the very first step with "Stopped at line 580", which
+# tells a first-time user nothing about the cause or the cure. The `apt upgrade`
+# below was already tolerant, which is the greater risk of the two.
+APT_OUT=""
+APT_UPDATE_OK="yes"
+APT_OUT="$(apt-get update -qq 2>&1)" || APT_UPDATE_OK="no"
+if [[ -n "${APT_OUT}" ]]; then
+  while IFS= read -r _l; do [[ -n "${_l}" ]] && info "${_l}"; done \
+    < <(grep -E '^[WE]:' <<<"${APT_OUT}" | head -8 || true)
+fi
+if [[ "${APT_UPDATE_OK}" == "no" ]]; then
+  warn "Refreshing the package lists reported a problem, shown above."
+  info "That is an existing apt setting on this machine, not something PatterOS changed."
+  info "It is nearly always a third-party repository whose signing key has expired or"
+  info "is missing. It does not stop the install: we continue with the lists already"
+  info "on disk. If one of the packages below turns out to be unavailable, fix or"
+  info "remove that repository and run this again."
+fi
 if [[ "${SKIP_UPGRADE}" == "yes" ]]; then
   info "Skipping 'apt upgrade' (--skip-upgrade / chosen at the prompt). Lists were still refreshed."
 else
@@ -557,12 +716,18 @@ else
     info "Nothing is broken, one reboot reloads it. Phase 2 will leave the driver alone."
   fi
 fi
-apt-get install -y -qq \
-  build-essential cmake git curl wget ca-certificates pkg-config \
-  libcurl4-openssl-dev libssl-dev python3-pip python3-venv python3-dev \
-  pciutils tmux ufw \
-  libvulkan-dev glslc spirv-headers vulkan-tools mesa-vulkan-drivers \
+BASE_PKGS=(
+  build-essential cmake git curl wget ca-certificates pkg-config
+  libcurl4-openssl-dev libssl-dev python3-pip python3-venv python3-dev
+  pciutils tmux ufw
+  libvulkan-dev glslc spirv-headers vulkan-tools mesa-vulkan-drivers
+)
+# Note what is missing first: after apt has run, "installed" no longer
+# distinguishes what we added from what was already here.
+mapfile -t _base_new < <(pkgs_absent "${BASE_PKGS[@]}")
+apt-get install -y -qq "${BASE_PKGS[@]}" \
   || die "Could not install the base packages. Check apt/network and re-run."
+(( ${#_base_new[@]} )) && record_pkgs "${_base_new[@]}"
 good "Base tools and Vulkan libraries installed."
 
 # ======================================================================== 2 ==
@@ -575,12 +740,13 @@ ensure_cuda_toolkit(){
   if (( ${#need[@]} )); then
     info "Installing build tools: ${need[*]}"
     apt-get install -y -qq "${need[@]}" || warn "Some CUDA packages failed; the build may fall back to CPU."
+    record_pkgs "${need[@]}"
   else
     info "CUDA toolkit and compiler already present."
   fi
 }
 secureboot_hint(){
-  if command -v mokutil >/dev/null 2>&1 && mokutil --sb-state 2>/dev/null | grep -qi 'enabled'; then
+  if command -v mokutil >/dev/null 2>&1 && grep -qi 'enabled' <<<"$(mokutil --sb-state 2>/dev/null || true)"; then
     warn "Secure Boot is ENABLED. If the GPU is still missing AFTER the reboot, Secure Boot is"
     warn "blocking the driver module: complete the blue MOK enrolment screen during boot, or"
     warn "disable Secure Boot in the BIOS, then reboot again."
@@ -625,8 +791,17 @@ elif [[ "${VENDOR}" == "nvidia" ]]; then
     missing|broken)
       info "No working NVIDIA driver found (state: ${NV_STATE}), installing driver + CUDA toolchain."
       info "The driver only becomes active after a reboot, that's expected."
+      # ubuntu-drivers picks the packages, so the only way to know what it added
+      # is to look before and after. Without this the uninstaller's --drivers
+      # had no choice but to guess by wildcard, and guessed far too widely.
+      _drv_before="$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'nvidia-*' 'libnvidia-*' 'cuda-*' 2>/dev/null | awk '$1 ~ /^ii/{print $2}' | sort -u || true)"
+      pkg_installed ubuntu-drivers-common || _udc_new="ubuntu-drivers-common"
       apt-get install -y -qq ubuntu-drivers-common || true
       command -v ubuntu-drivers >/dev/null 2>&1 && { ubuntu-drivers autoinstall || warn "ubuntu-drivers reported an issue; continuing."; }
+      _drv_after="$(dpkg-query -W -f='${db:Status-Abbrev} ${Package}\n' 'nvidia-*' 'libnvidia-*' 'cuda-*' 2>/dev/null | awk '$1 ~ /^ii/{print $2}' | sort -u || true)"
+      mapfile -t _drv_new < <(comm -13 <(printf '%s\n' "${_drv_before}") <(printf '%s\n' "${_drv_after}") | sed '/^$/d')
+      (( ${#_drv_new[@]} )) && record_pkgs "${_drv_new[@]}"
+      [[ -n "${_udc_new:-}" ]] && record_pkgs "${_udc_new}"
       ensure_cuda_toolkit
       if [[ "$(nvidia_state)" == "ok" ]]; then
         info "Driver loaded without a reboot, rare, but lovely."
@@ -645,7 +820,7 @@ else
   # Vulkan from a systemd service needs the render/video groups; fix quietly if missing.
   if [[ "${VENDOR}" == "amd" || "${VENDOR}" == "intel" ]]; then
     for grp in render video; do
-      if getent group "${grp}" >/dev/null 2>&1 && ! id -nG "${REAL_USER}" 2>/dev/null | grep -qw "${grp}"; then
+      if getent group "${grp}" >/dev/null 2>&1 && ! grep -qw -- "${grp}" <<<"$(id -nG "${REAL_USER}" 2>/dev/null || true)"; then
         if usermod -aG "${grp}" "${REAL_USER}"; then
           info "Added ${REAL_USER} to the '${grp}' group (GPU access for services)."
           # Record it so the uninstaller can put this back exactly as it was.
@@ -667,13 +842,85 @@ if [[ ! -d "${LLAMA_DIR}/.git" ]]; then
   if [[ "${LLAMA_VERSION}" == "master" ]]; then as_user git clone --depth 1 "${LLAMA_REPO}" "${LLAMA_DIR}"
   else as_user git clone --depth 1 --branch "${LLAMA_VERSION}" "${LLAMA_REPO}" "${LLAMA_DIR}" \
         || { warn "Tag ${LLAMA_VERSION} not found; using master."; as_user git clone --depth 1 "${LLAMA_REPO}" "${LLAMA_DIR}"; }; fi
-else info "llama.cpp already cloned; reusing it."; fi
+else
+  # "Reusing it" must not quietly mean "at some other version". This directory
+  # can predate this run in two ways: an earlier install pinned a different tag,
+  # or the user cloned llama.cpp themselves by following the manual guide, which
+  # leaves them on master. Either way the header above names LLAMA_VERSION, so
+  # building whatever happens to be on disk would be a lie, and it would defeat
+  # the pin: before b9702 the router accepted -ngl and -c and then discarded
+  # them, which presents as a perfectly healthy service running entirely on the
+  # CPU. That is close to undiagnosable for a first-time user, so it is worth
+  # the extra care here.
+  info "llama.cpp already cloned; reusing it."
+  at="$(as_user git -C "${LLAMA_DIR}" describe --tags --exact-match HEAD 2>/dev/null || true)"
+  if [[ "${LLAMA_VERSION}" != "master" && "${at}" != "${LLAMA_VERSION}" ]]; then
+    if [[ -n "$(as_user git -C "${LLAMA_DIR}" status --porcelain 2>/dev/null || true)" ]]; then
+      warn "It is at ${at:-an untagged commit}, not the pinned ${LLAMA_VERSION}, and it has uncommitted"
+      warn "changes. It has been left exactly as it is, so that is what will be built."
+      info "For the pinned version, move ${LLAMA_DIR} aside and run this again."
+    else
+      info "It is at ${at:-an untagged commit}, so switching it to ${LLAMA_VERSION}."
+      if as_user git -C "${LLAMA_DIR}" fetch -q --depth 1 origin "refs/tags/${LLAMA_VERSION}:refs/tags/${LLAMA_VERSION}" 2>/dev/null \
+         && as_user git -C "${LLAMA_DIR}" checkout -q "${LLAMA_VERSION}" 2>/dev/null; then
+        good "Source is now at ${LLAMA_VERSION}."
+        REBUILD="yes"   # the source moved, so anything already compiled is stale
+      else
+        warn "Could not switch to ${LLAMA_VERSION}, so ${at:-the current commit} is what will be built."
+        info "Use LLAMA_VERSION=master to track the tip on purpose, or move ${LLAMA_DIR} aside for a clean clone."
+      fi
+    fi
+  fi
+fi
+
+ENGINE_REBUILT="no"            # did we actually produce a new llama-server?
+LLAMA_STOPPED_FOR_BUILD="no"   # did we stop a running service to do it?
+
+# How many compilers to run at once. Not simply nproc: a CUDA translation unit
+# in llama.cpp can hold well over 2 GB, so on a 16-thread machine with 16 GB the
+# honest answer is not 16. Exceeding memory here does not fail cleanly, it takes
+# the desktop with it, and the machines most likely to hit it are the budget
+# builds this project is aimed at. Allow ~2 GB per job of what is actually
+# available, keep at least one, and say so when the cap bites.
+build_jobs(){
+  local cores mem_kb jobs
+  cores="$(nproc 2>/dev/null || echo 1)"
+  if [[ -n "${JOBS_OVERRIDE}" ]]; then
+    if [[ "${JOBS_OVERRIDE}" =~ ^[1-9][0-9]*$ ]]; then
+      printf '%s\n' "${JOBS_OVERRIDE}"; return
+    fi
+    warn "Ignoring JOBS='${JOBS_OVERRIDE}': it must be a whole number of 1 or more."
+  fi
+  mem_kb="$(awk '/^MemAvailable:/{print $2; exit}' /proc/meminfo 2>/dev/null || true)"
+  [[ "${mem_kb}" =~ ^[0-9]+$ ]] || { printf '%s\n' "${cores}"; return; }
+  jobs=$(( mem_kb / 1024 / 1024 / 2 ))
+  (( jobs < 1 ))     && jobs=1
+  (( jobs > cores )) && jobs="${cores}"
+  printf '%s\n' "${jobs}"
+}
 
 build(){ # $@ = extra cmake flags ; builds into build/ and checks the binary exists
+  local jobs cores; jobs="$(build_jobs)"; cores="$(nproc 2>/dev/null || echo "${jobs}")"
+  if [[ -n "${JOBS_OVERRIDE}" && "${jobs}" == "${JOBS_OVERRIDE}" ]]; then
+    info "Compiling with ${jobs} parallel jobs, from JOBS in the environment."
+  elif [[ "${jobs}" != "${cores}" ]]; then
+    info "Compiling with ${jobs} of your ${cores} cores, to stay inside available memory."
+    info "Slower, and much safer than running out of memory mid-build. Override with JOBS=<n>."
+  fi
+  # Stop the service before the build directory goes, for two reasons. Deleting
+  # the binary out from under a running llama-server leaves it serving from a
+  # file that no longer exists, and if systemd restarts it during the build it
+  # fails on a missing executable. It is brought back up in phase 5.
+  if [[ -d "${LLAMA_DIR}/build" ]] && systemctl is-active --quiet llama.service 2>/dev/null; then
+    info "Stopping llama.service while the engine rebuilds."
+    systemctl stop llama.service >/dev/null 2>&1 || true
+    LLAMA_STOPPED_FOR_BUILD="yes"
+  fi
   as_user rm -rf "${LLAMA_DIR}/build"
   as_user cmake -S "${LLAMA_DIR}" -B "${LLAMA_DIR}/build" -DCMAKE_BUILD_TYPE=Release -DLLAMA_CURL=ON "$@" \
-    && as_user cmake --build "${LLAMA_DIR}/build" --config Release -j"$(nproc)" \
-    && [[ -x "${LLAMA_DIR}/build/bin/llama-server" ]]
+    && as_user cmake --build "${LLAMA_DIR}/build" --config Release -j"${jobs}" \
+    && [[ -x "${LLAMA_DIR}/build/bin/llama-server" ]] \
+    && ENGINE_REBUILT="yes"
 }
 # What we'd build for THIS machine today
 DESIRED="cpu"
@@ -711,7 +958,15 @@ elif [[ -z "${BUILT}" ]] && [[ "${VENDOR}" == "amd" || "${VENDOR}" == "intel" ]]
 fi
 if [[ -z "${BUILT}" ]]; then
   info "Building the CPU engine..."
-  build || die "Even the CPU build failed. Scroll up for the compiler error."
+  if ! build; then
+    # If we stopped a working server to make room for this build, say so. The
+    # binary went with the build directory, so it cannot simply be started again.
+    if [[ "${LLAMA_STOPPED_FOR_BUILD}" == "yes" ]]; then
+      warn "llama.service was stopped for this rebuild and cannot start again until a build succeeds."
+      warn "Nothing else has been touched: your models and settings are where they were."
+    fi
+    die "Even the CPU build failed. Scroll up for the compiler error."
+  fi
   BUILT="cpu"
 fi
 # Record what we built so re-runs can reuse it intelligently (skip if unchanged reuse)
@@ -767,7 +1022,12 @@ step "4/9  Downloading models into ${MODELS_DIR}"
 as_user mkdir -p "${MODELS_DIR}"
 if (( ${#MODEL_SET[@]} > 0 )); then
   preflight_models
-  as_user python3 -m pip install -q --user --break-system-packages -U huggingface_hub \
+  # --no-warn-script-location silences three paragraphs of pip warnings about
+  # ~/.local/bin not being on PATH. They are alarming to read, they arrive right
+  # after the longest wait so far, and they describe something this script
+  # already handles: hf_user puts that directory on PATH for the commands below.
+  as_user python3 -m pip install -q --user --break-system-packages \
+    --no-warn-script-location -U huggingface_hub \
     || die "Could not install the Hugging Face downloader."
 
   # Newer huggingface_hub ships 'hf'; older installs only have 'huggingface-cli'.
@@ -838,13 +1098,23 @@ fi
 # on disk still matches that checksum, it is ours and we update it freely. If
 # it does not, the user changed it, and we keep their version.
 #   $1 = unit name   $2 = desired content
+
+# Set by install_unit: "yes" when the file on disk actually changed. The caller
+# needs this because `systemctl start` is a no-op on a running service, so a
+# service whose unit we just rewrote keeps running with its OLD command line
+# until something restarts it. Without this the installer would report the new
+# port or context window while the old one was still in effect.
+UNIT_WROTE="no"
+
 install_unit(){
   local unit="$1" content="$2" path="/etc/systemd/system/$1" stamp="${STAMP_DIR}/$1.sha" now ours=""
   mkdir -p "${STAMP_DIR}"
   now="$(printf '%s' "${content}" | sha256sum | awk '{print $1}')"
+  UNIT_WROTE="no"
 
   if [[ ! -f "${path}" ]]; then
     printf '%s' "${content}" > "${path}"; printf '%s\n' "${now}" > "${stamp}"
+    UNIT_WROTE="yes"
     return 0
   fi
 
@@ -854,6 +1124,7 @@ install_unit(){
 
   if [[ "${ours}" == "yes" ]]; then
     printf '%s' "${content}" > "${path}"; printf '%s\n' "${now}" > "${stamp}"
+    UNIT_WROTE="yes"
     info "Updated ${unit}."
     return 0
   fi
@@ -873,6 +1144,7 @@ install_unit(){
   fi
   if [[ "${REPLACE_UNITS}" == "yes" || "${a,,}" == "y" || "${a,,}" == "yes" ]]; then
     printf '%s' "${content}" > "${path}"; printf '%s\n' "${now}" > "${stamp}"
+    UNIT_WROTE="yes"
     info "Replaced ${unit}. The previous version is still at ${backup}."
   else
     info "Keeping your ${unit} unchanged."
@@ -907,16 +1179,57 @@ EOF
 )"
 install_unit llama.service "${LLAMA_UNIT}"
 systemctl daemon-reload
-systemctl enable --now llama.service >/dev/null 2>&1 || warn "Service didn't start yet (NVIDIA usually needs the reboot for its driver)."
+systemctl enable llama.service >/dev/null 2>&1 || warn "Could not enable llama.service to start at boot."
+# `start` is a no-op on a service that is already running, so on a re-run that
+# changed the port or the context window the OLD process would keep serving with
+# the OLD settings while everything here reported success. Restart when we have
+# just rewritten the file, and when it is not running for any reason.
+#
+# A new engine needs the same treatment, and for a less obvious reason. On Linux
+# a running process keeps its executable alive by inode, so after --rebuild the
+# old llama-server carried on quite happily from a deleted file. Nothing looked
+# wrong: the port answered, the summary named the new engine, and the machine
+# went on running the old one until its next reboot.
+if [[ "${UNIT_WROTE}" == "yes" || "${ENGINE_REBUILT}" == "yes" ]] \
+   || ! systemctl is-active --quiet llama.service; then
+  systemctl restart llama.service >/dev/null 2>&1 || true
+  [[ "${ENGINE_REBUILT}" == "yes" ]] && info "Restarted llama.service so it runs the engine just built."
+fi
 good "Service installed and enabled on boot."
 
-# quick readiness check (don't fail the install if it's still loading / pre-reboot)
-sleep 3
-if curl -fsS "http://127.0.0.1:${PORT_LLAMA}/v1/models" >/dev/null 2>&1; then good "Server is answering on http://localhost:${PORT_LLAMA}/v1"
-else info "Server not answering yet, normal if a model is loading, or before the NVIDIA reboot."; fi
+# Readiness check, deliberately not fatal: before the first NVIDIA reboot, or
+# while a model loads, "not answering yet" is the correct state.
+#
+# Two traps to avoid. Blaming the NVIDIA driver for every failure sends people
+# to debug the wrong thing, because a port clash looks identical from here. And
+# an answer on the port is NOT proof of success: if another program owns the
+# port, it answers, and we would report a healthy server that is not ours.
+LLAMA_OK="no"
+case "$(service_health llama.service "${PORT_LLAMA}" 20)" in
+  serving)
+    LLAMA_OK="yes"
+    good "Server is answering on http://localhost:${PORT_LLAMA}/v1"
+    ;;
+  running)
+    LLAMA_OK="yes"
+    info "Server is up but not answering yet, normal while a model loads."
+    ;;
+  looping|dead)
+    warn "llama.service is not running."
+    _owner="$(port_owner "${PORT_LLAMA}")"
+    if [[ -n "${_owner}" ]]; then
+      warn "Port ${PORT_LLAMA} is held by ${_owner}, so the server could not bind to it."
+      info "Stop that program, or re-run choosing another port, then: sudo systemctl restart llama.service"
+    elif [[ "${NEED_REBOOT}" == "yes" ]]; then
+      info "Expected right now: the NVIDIA driver needs that reboot first. It will start afterwards."
+    else
+      service_why llama.service
+    fi
+    ;;
+esac
 
 # ======================================================================== 6 ==
-ODY_PW=""; ODY_PW_SET="no"; ODY_PW_FILE=""
+ODY_PW=""; ODY_PW_SET="no"; ODY_PW_FILE=""; ODY_OK="no"; ODY_HAD_AUTH="no"
 if [[ "${WANT_ODY}" == "yes" ]]; then
   step "6/9  Installing Odysseus (workspace, port ${PORT_ODY})"
   info "Odysseus is a separate open-source project (AGPL-3.0), not part of PatterOS."
@@ -937,6 +1250,29 @@ if [[ "${WANT_ODY}" == "yes" ]]; then
       || warn "Could not check out the pinned commit; using whatever '${ODY_BRANCH}' currently points at."
   fi
 
+  # Carry one upstream fix that has not reached the pinned branch.
+  #
+  # src/agent_loop.py annotates two helpers with dict[str, Any] but does not
+  # import Any, so importing the module raises NameError and the workspace dies
+  # on every start, for ever. Upstream fixed it on their dev branch in d96c7af,
+  # "fix(agent): import Any for tool event helper", but it has never been merged
+  # to main, and main is what a pinned install gets.
+  #
+  # The alternative to carrying it is a workspace that cannot start on any
+  # machine. The check is narrow on purpose: it only fires when that exact
+  # defect is present, so it becomes a no-op the moment upstream merges.
+  _ody_al="${ODY_DIR}/src/agent_loop.py"
+  if [[ -f "${_ody_al}" ]] \
+     && grep -q 'dict\[str, Any\]' "${_ody_al}" \
+     && ! grep -qE '^from typing import .*\bAny\b' "${_ody_al}"; then
+    if as_user sed -i 's/^from typing import /from typing import Any, /' "${_ody_al}" \
+       && grep -qE '^from typing import Any,' "${_ody_al}"; then
+      info "Applied one upstream Odysseus fix (missing 'Any' import) that is not yet on ${ODY_BRANCH}."
+    else
+      warn "Could not apply the known Odysseus 'Any' import fix; the workspace may fail to start."
+    fi
+  fi
+
   as_user python3 -m venv "${ODY_DIR}/venv"
   info "Installing Odysseus dependencies. This can take several minutes and the terminal may look quiet."
 
@@ -944,21 +1280,40 @@ if [[ "${WANT_ODY}" == "yes" ]]; then
   # from setup.py's output. Upstream branches on sys.stdin.isatty(): under this
   # script stdin IS a terminal, so it takes the interactive path, prompts with
   # getpass, and never prints the "Temporary password:" line the old grep
-  # looked for. On a re-run it prints "[skip] auth.json already exists" and
-  # returns early, so there is no password line then either. Setting the
-  # environment variable makes the behaviour deterministic in both cases.
+  # looked for. Setting the environment variable makes the first run
+  # deterministic instead.
+  #
+  # It does NOT make a re-run deterministic, and that is the part that was
+  # wrong. create_default_admin() in upstream's setup.py opens with
+  #     if os.path.exists(auth_path): print("[skip] auth.json already exists"); return
+  # before it reads either variable. So on every re-run the password below is
+  # never applied to anything, and writing it to the first-login file replaced a
+  # working credential with one that cannot log in. Anyone re-running the
+  # installer to recover a lost password got a file that looked authoritative
+  # and was fiction. Decide from the auth file, which is the same thing upstream
+  # decides from.
+  ODY_AUTH_FILE="${ODY_DIR}/data/auth.json"      # src/constants.py: DATA_DIR/auth.json
+  ODY_HAD_AUTH="no"; [[ -f "${ODY_AUTH_FILE}" ]] && ODY_HAD_AUTH="yes"
   ODY_PW="$(head -c 18 /dev/urandom | base64 | tr -d '/+=' | cut -c1-16)"
   as_user env PATH="${LLAMA_DIR}/build/bin:${ODY_DIR}/venv/bin:${PATH}" \
     ODYSSEUS_ADMIN_USER="admin" ODYSSEUS_ADMIN_PASSWORD="${ODY_PW}" \
     bash -lc "cd '${ODY_DIR}' && ./venv/bin/pip install -q -r requirements.txt && ./venv/bin/python setup.py" \
     || die "Odysseus setup failed. See the output above."
-  ODY_PW_SET="yes"
+  # Only claim a password if the account did not exist before and does now.
+  if [[ "${ODY_HAD_AUTH}" == "no" && -f "${ODY_AUTH_FILE}" ]]; then
+    ODY_PW_SET="yes"
+  fi
 
   ODY_UNIT="$(cat <<EOF
 [Unit]
 Description=Odysseus AI workspace
 After=network-online.target llama.service
 Wants=network-online.target
+# Give up after ten failed starts in five minutes. Without a limit, a workspace
+# that cannot start retries every ten seconds forever, filling the journal and
+# burning CPU on a machine whose owner has been told everything is fine.
+StartLimitIntervalSec=300
+StartLimitBurst=10
 
 [Service]
 User=${REAL_USER}
@@ -974,8 +1329,44 @@ EOF
 )"
   install_unit odysseus.service "${ODY_UNIT}"
   systemctl daemon-reload
-  systemctl enable --now odysseus.service >/dev/null 2>&1 || warn "Odysseus service didn't start; check: journalctl -u odysseus -e"
-  good "Odysseus installed and enabled on boot."
+  systemctl enable odysseus.service >/dev/null 2>&1 || warn "Could not enable odysseus.service to start at boot."
+  # Same reasoning as llama.service: `start` would leave an already-running
+  # Odysseus on the old port after a re-run that changed it.
+  if [[ "${UNIT_WROTE}" == "yes" ]] || ! systemctl is-active --quiet odysseus.service; then
+    systemctl restart odysseus.service >/dev/null 2>&1 || true
+  fi
+  # Odysseus imports a large dependency tree before it binds the port, so give
+  # it appreciably longer than llama.cpp to come up on a cold start.
+  info "Waiting for the workspace to start, this takes up to a minute the first time."
+  case "$(service_health odysseus.service "${PORT_ODY}" 90)" in
+    serving)
+      ODY_OK="yes"
+      good "Odysseus installed, enabled on boot, and answering on http://localhost:${PORT_ODY}"
+      ;;
+    running)
+      ODY_OK="yes"
+      good "Odysseus installed and enabled on boot."
+      info "It has not answered on port ${PORT_ODY} yet; give it another minute, then reload the page."
+      ;;
+    looping)
+      warn "Odysseus is installed, but it starts and then immediately exits, over and over."
+      warn "This is a fault in the Odysseus application itself, not in your machine or"
+      warn "your GPU. Everything else on this install is unaffected: the model server"
+      warn "on port ${PORT_LLAMA} works, and you can use it from any app (guide, Step 10)."
+      service_why odysseus.service
+      info "Stop the retry loop with:  sudo systemctl disable --now odysseus.service"
+      ;;
+    dead)
+      warn "Odysseus is installed and enabled, but it is not running."
+      _ody_owner="$(port_owner "${PORT_ODY}")"
+      if [[ -n "${_ody_owner}" ]]; then
+        warn "Port ${PORT_ODY} is held by ${_ody_owner}, so Odysseus could not bind to it."
+        info "Stop that program, or re-run choosing another port."
+      else
+        service_why odysseus.service
+      fi
+      ;;
+  esac
 
   # Write the password to a root-only file instead of printing it. It ends up in
   # scrollback, in `script` logs and in anything recording the terminal
@@ -988,6 +1379,17 @@ EOF
     chmod 600 "${ODY_PW_FILE}"
     info "First-run login for Odysseus has been saved to a root-only file."
     info "Read it with:  sudo cat ${ODY_PW_FILE}"
+  elif [[ "${ODY_HAD_AUTH}" == "yes" ]]; then
+    # Your account already existed, so this run did not set a password and must
+    # not pretend it did. Point at the original file only if it is still there.
+    info "Odysseus already had an admin account, so your existing login still applies."
+    if [[ -f "${STAMP_DIR}/odysseus-first-login.txt" ]]; then
+      ODY_PW_FILE="${STAMP_DIR}/odysseus-first-login.txt"
+      info "The login saved by the first install is still at ${ODY_PW_FILE}."
+    else
+      info "If you have lost that password, delete ${ODY_AUTH_FILE} and re-run this"
+      info "installer: Odysseus will then create a fresh admin account for you."
+    fi
   fi
 else
   step "6/9  Skipping Odysseus (not selected)"
@@ -999,7 +1401,7 @@ if [[ "${VENDOR}" == "cpu" ]]; then
   info "No GPU on this machine, nothing to tune. Skipping."
 elif [[ "${WANT_LACT}" != "yes" ]]; then
   info "Skipping LACT (not selected). The manual route lives in the guide, Step 12."
-elif dpkg -l lact 2>/dev/null | grep -q '^ii'; then
+elif pkg_installed lact; then
   good "LACT is already installed."
   systemctl enable --now lactd >/dev/null 2>&1 || true
 else
@@ -1007,6 +1409,7 @@ else
   as_user mkdir -p "${USER_HOME}/Downloads"
   if as_user wget -q -O "${USER_HOME}/Downloads/lact.deb" "${LACT_DEB_URL}" \
      && apt-get install -y -qq "${USER_HOME}/Downloads/lact.deb"; then
+    record_pkgs lact
     systemctl enable --now lactd >/dev/null 2>&1 || warn "lactd didn't start; settings won't apply until it does."
     good "LACT installed. Open it from your applications menu, the guide (Step 12) shows the two-minute setup."
   else
@@ -1046,7 +1449,32 @@ else
   info "No SSH server detected; allowed the standard port 22 just in case."
 fi
 ufw --force enable >/dev/null 2>&1 || true
-good "Firewall on. The model server and Odysseus listen on this computer only, private by default."
+
+# What the units on disk actually bind to. This used to be asserted rather than
+# checked: the message said "listen on this computer only", which is true of the
+# units we write and false of a unit we preserved. Steps 10 and 11 of the guide
+# tell people to bind 0.0.0.0 for LAN or phone access, and install_unit keeps
+# edited files on purpose, so a re-run met exactly that case and then enabled a
+# firewall that blocked the port, silently, having just called it private.
+LAN_UNITS=()
+for _u in llama.service:"${PORT_LLAMA}" odysseus.service:"${PORT_ODY}"; do
+  _f="/etc/systemd/system/${_u%%:*}"; _p="${_u##*:}"
+  [[ -r "${_f}" ]] || continue
+  grep -qE -- '--host[= ]+(0\.0\.0\.0|::|\*)' "${_f}" && LAN_UNITS+=("${_u%%:*}:${_p}")
+done
+
+if (( ${#LAN_UNITS[@]} == 0 )); then
+  good "Firewall on. The model server and Odysseus listen on this computer only, private by default."
+else
+  good "Firewall on. Incoming connections are blocked except SSH."
+  for _u in "${LAN_UNITS[@]}"; do
+    _n="${_u%%:*}"; _p="${_u##*:}"
+    warn "${_n} is set to listen on your whole network (--host 0.0.0.0), but port ${_p} is now blocked."
+    info "That was your edit, so it is left alone. To reach it from other devices:"
+    info "    sudo ufw allow ${_p}/tcp"
+    info "Only do that on a network you trust, and read the guide's Step $([[ "${_n}" == odysseus.service ]] && echo 11 || echo 10) first."
+  done
+fi
 info "Phone access to Odysseus:           guide, Step 11  (allow ${PORT_ODY}/tcp + bind 0.0.0.0)"
 info "Other apps/machines (Cursor etc.):  guide, Step 10  (allow ${PORT_LLAMA}/tcp + --api-key)"
 fi
@@ -1067,13 +1495,26 @@ if [[ "${BUILT}" == "cuda" ]]; then
     *) GPU_VERDICT="CUDA built, driver not working; see the phase 2 notes above" ;;
   esac
 elif [[ "${BUILT}" == "vulkan" ]]; then
-  if vulkaninfo --summary 2>/dev/null | grep -q deviceName; then GPU_VERDICT="Vulkan, GPU visible and active"
+  if grep -q deviceName <<<"$(vulkaninfo --summary 2>/dev/null || true)"; then GPU_VERDICT="Vulkan, GPU visible and active"
   else GPU_VERDICT="Vulkan built, GPU not visible yet (groups fixed this run; restart the service or reboot)"; fi
 fi
-echo "  Model server:  http://localhost:${PORT_LLAMA}/v1   (engine: ${BUILT})"
+if [[ "${LLAMA_OK}" == "yes" ]]; then
+  echo "  Model server:  http://localhost:${PORT_LLAMA}/v1   (engine: ${BUILT})"
+else
+  echo "  Model server:  NOT RUNNING (see the phase 5 notes above)   (engine: ${BUILT})"
+fi
 echo "  GPU status:    ${GPU_VERDICT}"
-[[ "${WANT_ODY}" == "yes" ]] && echo "  Workspace:     http://localhost:${PORT_ODY}            (log in as 'admin')"
-[[ -n "${ODY_PW_FILE}" ]] && echo "  Admin login:   sudo cat ${ODY_PW_FILE}   (username 'admin')"
+if [[ "${WANT_ODY}" == "yes" ]]; then
+  if [[ "${ODY_OK}" == "yes" ]]; then
+    echo "  Workspace:     http://localhost:${PORT_ODY}            (log in as 'admin')"
+    [[ -n "${ODY_PW_FILE}" ]] && echo "  Admin login:   sudo cat ${ODY_PW_FILE}   (username 'admin')"
+  else
+    # Never print a URL for something we have just watched fail. The summary is
+    # the one part everybody reads, so it has to agree with reality.
+    echo "  Workspace:     NOT RUNNING (see the phase 6 notes above)"
+    echo "                 Your model server above is fine and usable on its own."
+  fi
+fi
 echo "  Models dir:    ${MODELS_DIR}"
 echo "  Connect apps:  base URL http://localhost:${PORT_LLAMA}/v1, any API key  (guide Step 10 for other machines)"
 echo
@@ -1081,15 +1522,22 @@ echo "  See models:        curl http://localhost:${PORT_LLAMA}/v1/models"
 echo "  Switch model:      use a different model id in your request (loads live)"
 echo "  Add a model:       hf download <repo> --include '*.gguf' --local-dir ${MODELS_DIR}"
 echo "                     then: curl 'http://localhost:${PORT_LLAMA}/v1/models?reload=1'"
+# pip put hf in ~/.local/bin. Mint and Ubuntu add that to PATH from ~/.profile,
+# which is only read at login, so the command above is genuinely not found in
+# the terminal the installer was just run from. Saying so costs one line and
+# saves a "you told me to run a command that does not exist" moment.
+echo "                     ('hf' lives in ~/.local/bin, so open a new terminal first)"
 echo "  Restart server:    sudo systemctl restart llama.service"
-[[ "${WANT_ODY}" == "yes" ]] && echo "  Odysseus log/pw:   sudo journalctl -u odysseus -e"
+# The password is in the root-only file above and is deliberately never printed,
+# so this line points at the log only.
+[[ "${WANT_ODY}" == "yes" ]] && echo "  Odysseus log:      sudo journalctl -u odysseus -e"
 echo
 if [[ "${NEED_REBOOT}" == "yes" ]]; then
   echo -e "${WN}  Reboot once so the NVIDIA driver loads:  sudo reboot${N}"
   echo    "  After the reboot the model server starts automatically with GPU offload."
 fi
 if [[ "${VENDOR}" != "cpu" ]]; then
-  if dpkg -l lact 2>/dev/null | grep -q '^ii'; then
+  if pkg_installed lact; then
     echo "  LACT:          installed, open it from your menu and set a power cap (guide, Step 12)."
   else
     echo "  LACT:          not installed, Software Manager or the guide, Step 12, when you want it."

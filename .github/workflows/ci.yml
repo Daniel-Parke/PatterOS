@@ -91,7 +91,9 @@ jobs:
     container: ubuntu:24.04
     steps:
       - name: Dependencies
-        run: apt-get update -qq && apt-get install -y -qq git ca-certificates systemd
+        # bsdutils provides `script`, which the interactive suite uses to drive
+        # /dev/tty prompts through a pseudo-terminal.
+        run: apt-get update -qq && apt-get install -y -qq git ca-certificates systemd bsdutils
       - uses: actions/checkout@v4
       - name: A hand-edited service file survives a re-run
         run: bash tests/test_unit_preservation.sh
@@ -103,6 +105,12 @@ jobs:
         # card asked to hold a 17 GB model, SSH on a non-standard port,
         # Resizable BAR switched off) are exercised on every push.
         run: bash tests/test_install_paths.sh
+      - name: Every command-line flag and environment override
+        run: bash tests/test_install_flags.sh
+      - name: The prompts a real user sees
+        run: bash tests/test_install_interactive.sh
+      - name: Uninstaller flags without touching the host
+        run: bash tests/test_uninstall_paths.sh
 
   line-endings:
     name: no CRLF in shell scripts

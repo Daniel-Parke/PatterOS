@@ -99,7 +99,21 @@ done < <(grep -oE 'unsloth/[A-Za-z0-9._-]+' "${INSTALL}" | sort -u)
 if [[ -z "${mismatch}" ]]; then ok "every model in the script is named in the guide"
 else bad "models in the script but not the guide:${mismatch}"; fi
 
-# --- 8. q4 only -------------------------------------------------------------
+# --- 8. LACT version agrees -------------------------------------------------
+# The guide sat on 0.9.0 for a release after the script moved to 0.10.0, so
+# someone following the manual route installed a different build from someone
+# running the script, and only one of them was the version we test.
+lact_script="$(grep -oE '^LACT_VER="[0-9.]+"' "${INSTALL}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | head -1)"
+lact_guide="$(grep -oE 'LACT/releases/download/v[0-9.]+' "${GUIDE}" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' | sort -u)"
+if [[ -z "${lact_script}" ]]; then
+  bad "could not read LACT_VER out of the installer"
+elif [[ "${lact_guide}" == "${lact_script}" ]]; then
+  ok "the guide installs the same LACT version as the script (${lact_script})"
+else
+  bad "LACT version drift: script ${lact_script}, guide ${lact_guide:-none}"
+fi
+
+# --- 9. q4 only -------------------------------------------------------------
 # A model either fits in memory or it does not. Full-precision weights are never
 # downloaded, so no BF16/F16/F32 quant may appear in the model list.
 if grep -oE 'unsloth/[A-Za-z0-9._-]+\|[^|]*\|' "${INSTALL}" | grep -qiE 'bf16|f16|f32'; then

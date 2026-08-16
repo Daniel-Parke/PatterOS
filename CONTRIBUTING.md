@@ -42,14 +42,22 @@ shellcheck --severity=style scripts/*.sh tests/*.sh
 # Parse.
 for f in scripts/*.sh tests/*.sh; do bash -n "$f"; done
 
-# Tests. The last two need root, so run them in a throwaway container.
+# Tests. Anything that needs root belongs in a throwaway container.
 bash tests/test_docs_consistency.sh
-docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_unit_preservation.sh
+bash tests/test_unit_preservation.sh
+docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_install_paths.sh
+docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_install_flags.sh
+docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_install_interactive.sh
+docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_uninstall_paths.sh
+# The next one runs the REAL uninstaller with no stubs. It will stop and
+# delete llama.service / odysseus.service on the machine it is pointed at.
+# Container only.
 docker run --rm -v "$PWD:/mnt" -w /mnt ubuntu:24.04 bash tests/test_uninstall_reversal.sh
 ```
 
-**Never run the installer on a machine you care about.** Use a virtual machine
-or a spare rig. It installs drivers.
+**Never run the installer, or `tests/test_uninstall_reversal.sh`, on a machine
+you care about.** Use a virtual machine or a spare rig. The installer can
+install drivers; that one test really does delete the service files.
 
 ### Rules that are not negotiable
 

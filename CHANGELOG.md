@@ -6,6 +6,125 @@ This project follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 loosely: the point is that someone who ran an older version can tell what
 changed on their machine and why it matters to them.
 
+## [Unreleased]
+
+Found while building out the test suite for the installer and then running it
+for real, twice, on an RTX 3090 Ti. Every fix below shares a shape: the script
+reported success while quietly doing something other than what it said.
+
+### Fixed
+
+- **The workspace could not start at all, and the installer said it had.**
+  Odysseus is pinned to a specific commit so that everyone installs the same
+  code. That commit, the tip of upstream's `main`, annotates two helpers in
+  `src/agent_loop.py` with `dict[str, Any]` without importing `Any`, so the
+  module raises `NameError` before the web server ever binds its port. Upstream
+  fixed it on their `dev` branch (`d96c7af`, "import Any for tool event helper")
+  and never merged it to `main`. The effect on a new install was a workspace that
+  started, died, and was restarted every ten seconds for ever, while the closing
+  summary printed `http://localhost:7000` and invited you to log in. The
+  installer now carries that one-line upstream fix, applied only when that exact
+  defect is present, so it becomes a no-op as soon as upstream merges.
+- **`systemctl is-active` was being used as a health check, moments after
+  starting the service.** These units are `Type=simple`, so systemd calls them
+  active the instant the process is forked, whether or not it survives. That is
+  what let a crash-looping workspace be reported as installed and working. Both
+  services are now watched until they either answer on their port or visibly
+  fail, the restart counter is used to catch a service that is dying and being
+  restarted, and the last few lines of the service log are printed inline so the
+  real error is on screen rather than behind a `journalctl` command. The closing
+  summary now says `NOT RUNNING` instead of printing a URL for something that
+  is down, and makes clear the model server is still usable on its own.
+- **`--lact` silently failed to remove LACT on any normal machine.** The check
+  was `dpkg -l | grep -q '^ii  lact '`. Under `set -o pipefail`, `grep -q` exits
+  at its first match and closes the pipe, so `dpkg` (a few hundred KB of output,
+  far more than a pipe holds) dies of SIGPIPE and the pipeline reports failure
+  even though the match succeeded. Measured on the test machine: exit 141, with
+  `grep` itself returning 0 and LACT definitely installed. Every early-exit
+  pipeline of that shape in both scripts has been replaced, because whether it
+  bites depends on how much output there is and how far down the match sits,
+  which is why it looked intermittent.
+- **The uninstaller claimed to have removed firewall rules that were still
+  there.** Same SIGPIPE cause in the check that reads the rules back, so the
+  verification quietly inverted itself. Two related problems went with it: the
+  rules for ports 8020 and 7000 were described as "ours" when the installer only
+  ever opens SSH, so they can only have been added by hand following Step 10 or
+  11 of the guide; and `ufw delete allow 8020/tcp` does not match a rule added
+  as `ufw allow 8020`, yet still exits 0. Rules are now removed only if they
+  exist, in either form, the removal is confirmed by reading the rules back, and
+  the message credits them to the person who added them. If one cannot be
+  removed, that is stated along with the exact command to finish the job and a
+  note that a rule for a port nothing listens on opens nothing.
+- **The uninstaller's closing summary listed deletions that never happened.** It
+  printed "Removed: services + ~/llama.cpp + ~/odysseus" on every run, including
+  on a machine where none of those existed. It now lists only what actually
+  went, and says so plainly when that was nothing.
+- **`LLAMA_VERSION` was ignored whenever `~/llama.cpp` already existed.** The
+  step header announced the requested version, no git command ran, and whatever
+  was already on disk got compiled. `--rebuild` did not help either: it
+  recompiled the same old source. This mattered most to anyone who followed the
+  manual guide first, since cloning llama.cpp yourself leaves you on `master`:
+  the pin exists because before tag `b9702` the router accepted `-ngl` and `-c`
+  and then discarded them, so you would get a service that looks perfectly
+  healthy and runs entirely on the CPU. An existing checkout is now moved to the
+  pinned version, or left alone with an explanation if you have uncommitted
+  changes in it.
+- **Changing a setting and re-running left the old setting running.** Editing
+  the port or the context window rewrote the service file, and `systemctl
+  enable --now` then did nothing at all, because starting an already-running
+  service is a no-op. The summary reported the new value while the old process
+  kept serving. Units that actually changed are now restarted; ones that did not
+  are left undisturbed, so a re-run no longer drops a loaded model for nothing.
+- **A busy port was reported as an NVIDIA driver problem, and then as success.**
+  If anything else already held port 8020, the service could not bind, the only
+  message said the driver probably needed a reboot, and the readiness check then
+  talked to whichever program *did* own the port and announced a working server.
+  The plan now warns about a port that is already in use, while it can still be
+  changed for free, and the readiness check confirms our own service is running
+  before it trusts an answer on the port.
+- **The uninstaller's "never delete outside your home" guard did not hold for
+  every home.** With a home directory of `/`, paths like `//llama.cpp` counted
+  as being inside it, so the check that exists to catch the unexpected passed
+  deletions at the top of the filesystem straight through. Both scripts now stop
+  if the home directory is `/`.
+
+### Added
+
+- Three new test suites covering ground that had none: every prompt a user sees
+  driven through a pseudo-terminal (both confirmation gates, the Customise and
+  skip-phases dialogues, the edited-service-file question and the offer to
+  reboot), every command-line flag and environment override, and every
+  uninstaller flag including `--dry-run`, `--all` and the deletion guard rails.
+  With the existing hardware matrix that is 463 assertions in the stubbed
+  suites, plus the uninstaller reversal checks that still run only in a
+  disposable container.
+
+### Changed
+
+- The closing summary no longer suggests a command that does not work yet. `hf`
+  is installed into `~/.local/bin`, which Mint and Ubuntu add to `PATH` from
+  `~/.profile` at login, so "Add a model: hf download ..." fails in the very
+  terminal the installer just finished in. It now says to open a new terminal
+  first. The three paragraphs of pip warnings about that same directory are
+  suppressed, since the script already handles it and they arrive right after
+  the longest wait in the install.
+- `Odysseus log/pw` in the summary is now `Odysseus log`. The first-run password
+  goes to a root-only file and is deliberately never printed, so offering the
+  journal as a way to find it was a leftover from when it was.
+- The workspace service gets a start limit, so a workspace that cannot start
+  gives up after ten attempts instead of retrying every ten seconds for ever on
+  a machine whose owner has been told everything is fine.
+- The stub harness is now faithful in seven places where it was not, each of
+  which had been hiding or inventing a failure: a masked command is genuinely
+  absent from `PATH` rather than merely broken, a checkout remembers which tag
+  it is at, `systemctl status` can report a unit it does not know, the restart
+  counter can climb so a crash loop is reachable in a test, `ufw` keeps track of
+  which rules it has deleted and refuses a `/tcp` delete for a rule stored
+  without a protocol, and `dpkg -l` can pad its output past a pipe buffer. That
+  last one matters: against a three-line stub, the `--lact` SIGPIPE bug passed
+  its test on every run. The hardware matrix also resets its scratch home, so
+  running it twice in a row no longer produces different results.
+
 ## [1.4] - 15 August 2026
 
 The correctness release. Everything here is a fix to something that was already

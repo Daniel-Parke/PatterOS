@@ -34,6 +34,23 @@ U="patteros_probe"
 id -u "${U}" >/dev/null 2>&1 || useradd -m "${U}" >/dev/null 2>&1
 command -v sha256sum >/dev/null 2>&1 || { echo "sha256sum required"; exit 1; }
 
+# Start every run from the same state.
+#
+# The scenarios below deliberately SHARE the probe user's home, so a clone or a
+# build made by an early case is reused by a later one, which is exactly what
+# happens on a real machine and is what the idempotency case depends on. The
+# side effect is that a SECOND run of this suite would begin with ~/odysseus
+# and ~/llama.cpp already there, the installer would correctly report "already
+# cloned; reusing it", and the assertion that it clones the canonical address
+# would fail looking for a clone that never needed to happen. The suite would
+# pass once and then fail forever after, which is worse than failing outright.
+PROBE_HOME="$(getent passwd "${U}" | cut -d: -f6)"
+if [[ -n "${PROBE_HOME}" && "${PROBE_HOME}" == /home/* && -d "${PROBE_HOME}" ]]; then
+  rm -rf -- "${PROBE_HOME}/llama.cpp" "${PROBE_HOME}/odysseus" "${PROBE_HOME}/models" "${PROBE_HOME}/Downloads"
+else
+  echo "refusing to reset an unexpected home for ${U}: '${PROBE_HOME}'"; exit 1
+fi
+
 # Run the installer in a sandbox with a given scenario.
 # Usage: run_case <name> <extra installer args...>   (scenario via STUB_* env)
 run_case(){
@@ -49,7 +66,11 @@ run_case(){
       "${INSTALL}" > "${SANDBOX}/install.sh"
 
   OUT="${SANDBOX}/stdout.txt"
-  ( export PATH="${STUB_DIR}:${PATH}"
+  # stubs.sh composes the PATH for us. It normally just prefixes STUB_DIR, but
+  # when a scenario needs a command to be genuinely absent it hands back a PATH
+  # with the real directories replaced by a farm that omits it. Reading it back
+  # here keeps that detail in one place.
+  ( PATH="$(cat "${STUB_DIR}-path")"; export PATH
     export SUDO_USER="${U}"
     cd "${SANDBOX}" && bash "${SANDBOX}/install.sh" -y "$@" >"${OUT}" 2>&1 )
   RC=$?
@@ -266,7 +287,14 @@ if command -v systemd-analyze >/dev/null 2>&1; then
     run_case "unit validation" --no-models --skip-firewall
   for u in "${SANDBOX}/etc/llama.service" "${SANDBOX}/etc/odysseus.service"; do
     [[ -f "${u}" ]] || continue
-    v="$(systemd-analyze verify "${u}" 2>&1 | grep -vE 'Unknown key name .WantedBy|/dev/null|Failed to (create|prepare)|systemd-analyze' || true)"
+    # SYSTEMD_UNIT_PATH confines the search to our sandbox. Without it
+    # systemd-analyze also parses everything in /etc/systemd/system, so an
+    # unrelated unit already on the machine reports its own faults against OUR
+    # unit and the assertion fails for reasons that have nothing to do with
+    # PatterOS. That is a false failure on a real workstation and a silent pass
+    # in a bare container, which is the worst combination.
+    v="$(SYSTEMD_UNIT_PATH="${SANDBOX}/etc" systemd-analyze verify "${u}" 2>&1 \
+         | grep -vE 'Unknown key name .WantedBy|/dev/null|Failed to (create|prepare)|systemd-analyze' || true)"
     if [[ -z "${v}" ]]; then ok "$(basename "${u}") is valid systemd syntax"
     else bad "$(basename "${u}") is valid systemd syntax" "${v}"; fi
   done

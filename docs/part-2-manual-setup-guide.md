@@ -559,7 +559,7 @@ LACT is a free, graphical power-and-fan tool for AMD, NVIDIA and Intel GPUs. On 
 cd ~/Downloads
 # Get the newest lact-*ubuntu-2404.deb from:
 #   https://github.com/ilya-zlobintsev/LACT/releases
-wget https://github.com/ilya-zlobintsev/LACT/releases/download/v0.9.0/lact-0.9.0-0.amd64.ubuntu-2404.deb -O lact.deb
+wget https://github.com/ilya-zlobintsev/LACT/releases/download/v0.10.0/lact-0.10.0-0.amd64.ubuntu-2404.deb -O lact.deb
 sudo apt install -y ./lact.deb
 # Start the background service (needed before settings will apply):
 sudo systemctl enable --now lactd
