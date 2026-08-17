@@ -1,0 +1,1081 @@
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Green Garage: Engineering the Most Efficient Solar-to-Hydrogen Closed-Loop System for Off-the-Shelf Deployment</title>
+<meta name="description" content="Executive Summary
+
+The quest to harness the intermittent power of solar energy for sustainable, long-duration energy storage has led to the development of soph">
+<meta property="og:title" content="The Green Garage: Engineering the Most Efficient Solar-to-Hydrogen Closed-Loop System for Off-the-Shelf Deployment">
+<meta property="og:description" content="Executive Summary
+
+The quest to harness the intermittent power of solar energy for sustainable, long-duration energy storage has led to the development of soph">
+<meta property="og:type" content="article">
+<meta property="og:image" content="https://zepp.solutions/wp-content/uploads/2023/08/zepp_solutions-fuel_cell_engineer_at_work.webp">
+<meta name="theme-color" content="#b8543a" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#131214" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,&lt;svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'&gt;&lt;text y='75' font-size='75'&gt;O&lt;/text&gt;&lt;/svg&gt;">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --font-display: 'Charter', 'Iowan Old Style', Georgia, serif;
+  --font-body: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --bg: #fbf9f4;
+  --bg-surface: #ffffff;
+  --bg-surface-alt: #f1ede4;
+  --border: rgba(0,0,0,0.08);
+  --border-strong: rgba(0,0,0,0.16);
+  --text: #1a1817;
+  --text-dim: #5a5651;
+  --text-muted: #8a8580;
+  --accent: #b8543a;
+  --accent-light: #d97a5e;
+  --accent-bg: rgba(184,84,58,0.06);
+  --gold: #c9952e;
+  --gold-bg: rgba(201,149,46,0.09);
+  --aurora-a: rgba(184,84,58,0.10);
+  --aurora-b: rgba(201,149,46,0.08);
+  --aurora-c: rgba(64,98,128,0.07);
+  --radius: 12px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+  --shadow-md: 0 4px 24px rgba(0,0,0,0.07);
+  --max-w: 760px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #131214; --bg-surface: #1c1a1e; --bg-surface-alt: #25232a;
+    --border: rgba(255,255,255,0.07); --border-strong: rgba(255,255,255,0.16);
+    --text: #ece8e2; --text-dim: #a8a39c; --text-muted: #6f6b66;
+    --accent: #e88f73; --accent-light: #f4ad95; --accent-bg: rgba(232,143,115,0.09);
+    --gold: #e8c05a; --gold-bg: rgba(232,192,90,0.09);
+    --aurora-a: rgba(232,143,115,0.13);
+    --aurora-b: rgba(232,192,90,0.09);
+    --aurora-c: rgba(125,180,224,0.10);
+    --shadow-sm: 0 1px 3px rgba(0,0,0,0.4); --shadow-md: 0 4px 28px rgba(0,0,0,0.55);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+  /* Give smooth-scroll some breathing room so anchors land below the
+     fixed toolbar instead of being shoved straight under it. */
+  scroll-padding-top: 4rem;
+}
+body {
+  font-family: var(--font-body);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.75;
+  font-size: 17px;
+  font-feature-settings: 'ss01', 'cv11';
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  position: relative;
+  min-height: 100vh;
+}
+
+/* ── Aurora background ─────────────────────────────────
+   Slowly-drifting layered blobs in the accent palette. Sits behind
+   the content, fixed to the viewport so scrolling doesn't reset the
+   composition. Subtle grain on top stops it reading as 'flat CSS'. */
+body::before {
+  content: '';
+  position: fixed;
+  inset: -20vh -20vw;
+  z-index: -2;
+  background:
+    radial-gradient(40vw 50vh at 18% 22%, var(--aurora-a) 0%, transparent 60%),
+    radial-gradient(45vw 55vh at 82% 12%, var(--aurora-b) 0%, transparent 65%),
+    radial-gradient(55vw 60vh at 50% 88%, var(--aurora-c) 0%, transparent 70%);
+  filter: blur(20px);
+  animation: aurora-drift 28s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  /* Subtle film-grain — SVG turbulence baked to a data-URL. */
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/><feColorMatrix values='0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.32 0'/></filter><rect width='100%25' height='100%25' filter='url(%23n)'/></svg>");
+  opacity: 0.045;
+  mix-blend-mode: overlay;
+}
+@keyframes aurora-drift {
+  0%   { transform: translate3d(0,0,0) scale(1);     }
+  50%  { transform: translate3d(2vw,-1vh,0) scale(1.04); }
+  100% { transform: translate3d(-1vw,1.5vh,0) scale(1.02); }
+}
+@media (prefers-reduced-motion: reduce) {
+  body::before { animation: none; }
+}
+
+/* ── Toolbar (top-right) ──────────────────────────── */
+.toolbar {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 100;
+  display: flex;
+  gap: 0.4rem;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+}
+.toolbar:hover { opacity: 1; }
+.toolbar button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  background: var(--bg-surface);
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+  transition: background 0.15s;
+  position: relative;
+}
+.toolbar button:hover { background: var(--bg-surface-alt); }
+.toolbar button svg { width: 14px; height: 14px; flex-shrink: 0; }
+.toolbar .toast {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  background: var(--text);
+  color: var(--bg);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+.toolbar .toast.show { opacity: 1; }
+.dropdown { position: relative; }
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  box-shadow: var(--shadow-md);
+  overflow: hidden;
+  min-width: 140px;
+}
+.dropdown-menu.open { display: block; }
+.dropdown-menu button {
+  display: block;
+  width: 100%;
+  padding: 8px 14px;
+  border: none;
+  background: none;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8rem;
+  text-align: left;
+  cursor: pointer;
+}
+.dropdown-menu button:hover { background: var(--bg-surface-alt); }
+
+/* ── Hero ──────────────────────────────────────────── */
+.hero {
+  position: relative;
+  background: transparent;
+  color: var(--text);
+  padding: 5.5rem 2rem 2.5rem;
+  text-align: center;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 40%, color-mix(in srgb, var(--accent) 10%, transparent) 0%, transparent 70%);
+  pointer-events: none;
+}
+/* A hair-thin gradient hairline divider under the hero to anchor it
+   without putting it on a heavy boxed background. */
+.hero::after {
+  content: '';
+  position: absolute;
+  left: 50%; bottom: 0;
+  width: min(60%, 320px);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(90deg, transparent, var(--border-strong), transparent);
+}
+.hero-label {
+  position: relative;
+  text-transform: uppercase;
+  letter-spacing: 0.28em;
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--accent);
+  opacity: 0.85;
+  margin-bottom: 1.4rem;
+  font-family: var(--font-body);
+}
+.hero h1 {
+  position: relative;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 120, 'SOFT' 50;
+  line-height: 1.15;
+  max-width: 720px;
+  margin: 0 auto;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+/* ── Hero image ───────────────────────────────────── */
+.hero-image {
+  max-width: var(--max-w);
+  margin: -2rem auto 0;
+  position: relative;
+  z-index: 1;
+  padding: 0 2rem;
+}
+.hero-image img {
+  width: 100%;
+  max-height: 360px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-md);
+  display: block;
+}
+
+/* ── Section images ───────────────────────────────── */
+.section-image {
+  margin: 1.5rem 0;
+  position: relative;
+}
+.section-image img {
+  width: 100%;
+  max-height: 300px;
+  object-fit: cover;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-sm);
+  display: block;
+}
+
+/* ── Per-image hide button ────────────────────────────
+   A small X that appears on hover (or always on touch) so users can
+   remove irrelevant OG images. Click POSTs the URL to the backend so
+   the next render skips it. */
+.img-hide-btn {
+  position: absolute;
+  top: 10px; right: 10px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-hide-btn { top: 14px; right: 2.5rem; }
+/* Reroll sits just to the left of the hide button. */
+.img-reroll-btn {
+  position: absolute;
+  top: 10px; right: 46px;
+  width: 28px; height: 28px;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: rgba(0,0,0,0.55);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, transform 0.05s ease;
+  z-index: 2;
+  padding: 0;
+}
+.hero-image .img-reroll-btn { top: 14px; right: calc(2.5rem + 36px); }
+.section-image:hover .img-hide-btn,
+.section-image:hover .img-reroll-btn,
+.hero-image:hover .img-hide-btn,
+.hero-image:hover .img-reroll-btn { opacity: 1; }
+.img-hide-btn:hover { background: var(--accent); }
+.img-reroll-btn:hover { background: var(--accent); }
+.img-hide-btn:active,
+.img-reroll-btn:active { transform: scale(0.92); }
+.img-reroll-btn.spinning svg { animation: img-reroll-spin 0.6s linear infinite; }
+.img-reroll-btn:disabled { display: none; }
+@keyframes img-reroll-spin { to { transform: rotate(360deg); } }
+@media (hover: none) {
+  /* Touch devices have no hover — show the buttons at low opacity always. */
+  .img-hide-btn, .img-reroll-btn { opacity: 0.7; }
+}
+.section-image.fading,
+.hero-image.fading {
+  opacity: 0;
+  transform: scale(0.96);
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+/* ── Stats bar ─────────────────────────────────────── */
+.stats-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.9rem 2rem;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.82rem;
+  color: var(--text-dim);
+}
+.stat { display: flex; align-items: center; gap: 0.35rem; }
+.stat-value { font-weight: 600; color: var(--text); }
+
+/* ── Layout ────────────────────────────────────────── */
+.layout {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  max-width: calc(var(--max-w) + 260px);
+  margin: 0 auto;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+  .toc-sidebar { display: none; }
+}
+
+/* ── TOC sidebar ───────────────────────────────────── */
+.toc-sidebar {
+  position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  padding: 3.2rem 0.8rem 2rem 1.4rem;
+  border-right: 1px solid var(--border);
+  font-size: 0.78rem;
+}
+.toc-sidebar nav { position: relative; }
+.toc-sidebar nav a {
+  position: relative;
+  display: block;
+  color: var(--text-dim);
+  text-decoration: none;
+  padding: 0.42rem 0.7rem 0.42rem 0.85rem;
+  margin: 1px 0;
+  border-radius: 6px;
+  line-height: 1.4;
+  letter-spacing: -0.005em;
+  transition: color 0.18s ease, background 0.18s ease, padding-left 0.18s ease;
+}
+/* Sliding accent indicator on the left edge of each TOC link */
+.toc-sidebar nav a::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  width: 2px; height: 0;
+  background: var(--accent);
+  transform: translateY(-50%);
+  border-radius: 1px;
+  transition: height 0.18s ease, opacity 0.18s ease;
+  opacity: 0;
+}
+.toc-sidebar nav a:hover {
+  color: var(--text);
+  background: var(--accent-bg);
+  padding-left: 1rem;
+}
+.toc-sidebar nav a:hover::before {
+  height: 60%;
+  opacity: 1;
+}
+.toc-sidebar nav a.active {
+  color: var(--accent);
+  font-weight: 600;
+  background: var(--accent-bg);
+}
+.toc-sidebar nav a.active::before {
+  height: 80%;
+  opacity: 1;
+}
+.toc-sidebar nav a.depth-3 {
+  padding-left: 1.3rem;
+  font-size: 0.72rem;
+  color: var(--text-muted);
+}
+.toc-sidebar nav a.depth-3:hover { padding-left: 1.45rem; }
+
+/* ── Content ───────────────────────────────────────── */
+.content { max-width: var(--max-w); padding: 3rem 2.5rem 4rem; }
+
+/* Display headings — Fraunces optical-size driven so they get more
+   contrast and personality at the larger end. */
+.content h2 {
+  font-family: var(--font-display);
+  font-size: clamp(1.55rem, 2.4vw, 1.85rem);
+  font-weight: 600;
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  margin: 3rem 0 1rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid transparent;
+  border-image: linear-gradient(90deg, var(--accent) 0%, transparent 65%) 1;
+  letter-spacing: -0.022em;
+  line-height: 1.2;
+  color: var(--text);
+}
+.content h2:first-child { margin-top: 0; }
+.content h3 {
+  font-family: var(--font-display);
+  font-size: 1.22rem;
+  font-weight: 600;
+  font-variation-settings: 'opsz' 32;
+  margin: 2.2rem 0 0.6rem;
+  letter-spacing: -0.015em;
+  color: var(--text);
+}
+.content h4 {
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  margin: 1.6rem 0 0.5rem;
+}
+.content p { margin-bottom: 1.1rem; hanging-punctuation: first last; }
+
+/* Drop cap on the very first paragraph of the body — old-school editorial
+   touch that anchors the reader. */
+.content > p:first-of-type::first-letter,
+.content > h2:first-child + p::first-letter {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-variation-settings: 'opsz' 144;
+  font-size: 3.6em;
+  line-height: 0.85;
+  float: left;
+  margin: 0.15em 0.12em 0 -0.04em;
+  color: var(--accent);
+}
+
+.content a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 35%, transparent);
+  text-decoration-thickness: 1.5px;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s, color 0.15s;
+}
+.content a:hover {
+  text-decoration-color: var(--accent);
+  color: var(--accent-light);
+}
+.content ul, .content ol { margin: 0 0 1.1rem 1.6rem; }
+.content li { margin-bottom: 0.4rem; }
+.content li::marker { color: var(--accent); }
+.content li > ul, .content li > ol { margin-top: 0.4rem; margin-bottom: 0; }
+.content blockquote {
+  position: relative;
+  border-left: 3px solid var(--gold);
+  background: var(--gold-bg);
+  padding: 1.1rem 1.4rem 1.1rem 2.6rem;
+  margin: 1.5rem 0;
+  border-radius: 0 var(--radius) var(--radius) 0;
+  color: var(--text);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.55;
+}
+.content blockquote::before {
+  content: '\201C';
+  position: absolute;
+  left: 0.5rem; top: 0.3rem;
+  font-family: var(--font-display);
+  font-size: 3rem;
+  font-style: normal;
+  color: var(--gold);
+  opacity: 0.5;
+  line-height: 1;
+}
+.content hr { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--border-strong), transparent); margin: 2rem 0; }
+.content code { font-family: var(--font-mono); font-size: 0.86em; background: var(--bg-surface-alt); padding: 0.15em 0.4em; border-radius: 4px; }
+.content pre { background: var(--bg-surface-alt); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem 1.5rem; overflow-x: auto; margin: 1.25rem 0; font-size: 0.86rem; line-height: 1.6; }
+.content pre code { background: none; padding: 0; }
+.content table { width: 100%; border-collapse: collapse; margin: 1.25rem 0; font-size: 0.9rem; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow-sm); }
+.content th { text-align: left; padding: 0.7rem 1rem; background: var(--accent-bg); font-weight: 600; border-bottom: 2px solid var(--border-strong); }
+.content td { padding: 0.6rem 1rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+.content tr:last-child td { border-bottom: none; }
+.content tr:hover td { background: var(--accent-bg); }
+
+/* ── Sources (collapsible list) ───────────────────── */
+.sources-panel { margin-top: 3rem; border-top: 2px solid var(--border); padding-top: 1.5rem; }
+.sources-panel details { margin: 0; }
+.sources-panel summary {
+  display: flex; align-items: center; gap: 0.5rem;
+  cursor: pointer; font-size: 1rem; font-weight: 600;
+  color: var(--text); padding: 0.5rem 0; list-style: none;
+  user-select: none;
+}
+.sources-panel summary::-webkit-details-marker { display: none; }
+.sources-panel summary::before {
+  content: '\25B6'; font-size: 0.65em; color: var(--text-muted);
+  transition: transform 0.2s;
+}
+.sources-panel details[open] summary::before { transform: rotate(90deg); }
+.sources-list { padding: 0.5rem 0 0 0.25rem; }
+.sources-list a {
+  display: flex; align-items: baseline; gap: 0.5rem;
+  padding: 0.35rem 0; font-size: 0.85rem;
+  color: var(--text); text-decoration: none;
+  transition: color 0.15s;
+}
+.sources-list a:hover { color: var(--accent); }
+.sources-list .snum {
+  color: var(--text-muted); font-size: 0.75rem;
+  min-width: 1.5rem; text-align: right; flex-shrink: 0;
+}
+.sources-list .sdomain {
+  color: var(--text-muted); font-size: 0.75rem;
+  margin-left: auto; flex-shrink: 0;
+}
+
+/* ── Chat-about CTA ────────────────────────────────── */
+.chat-cta {
+  margin: 3rem 0 1rem; padding: 1.5rem;
+  text-align: center;
+  border: 1px solid var(--border); border-radius: 12px;
+  background: var(--bg-surface);
+}
+.chat-cta-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 18px; font-size: 0.95rem; font-weight: 600;
+  background: var(--accent); color: #fff;
+  border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit;
+  transition: filter 0.15s, transform 0.05s;
+}
+.chat-cta-btn:hover:not(:disabled) { filter: brightness(1.1); }
+.chat-cta-btn:active:not(:disabled) { transform: translateY(1px); }
+.chat-cta-btn:disabled { opacity: 0.6; cursor: progress; }
+.chat-cta-hint {
+  margin-top: 8px; font-size: 0.8rem; color: var(--text-muted);
+}
+
+/* ── Footer ────────────────────────────────────────── */
+.report-footer {
+  text-align: center; padding: 2rem; font-size: 0.75rem;
+  color: var(--text-muted); border-top: 1px solid var(--border); margin-top: 2rem;
+}
+
+/* ── Animations ────────────────────────────────────── */
+@media (prefers-reduced-motion: no-preference) {
+  .content h2, .content h3, .content p, .content ul, .content ol,
+  .content blockquote, .content table, .content pre, .section-image {
+    animation: fadeUp 0.4s ease both;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ── Print ─────────────────────────────────────────── */
+@media print {
+  .toc-sidebar, .toolbar { display: none !important; }
+  .layout { grid-template-columns: 1fr; }
+  .hero { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+}
+
+</style>
+</head>
+<body class="">
+
+<!-- Toolbar: Export + Restore hidden images -->
+<div class="toolbar">
+  
+  <div class="dropdown">
+    <button id="btn-export" title="Export">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+      Export ▾
+    </button>
+    <div class="dropdown-menu" id="export-menu">
+      <button id="btn-pdf">Save as PDF</button>
+      <button id="btn-html">Download HTML</button>
+    </div>
+  </div>
+</div>
+
+<div class="hero">
+  <div class="hero-label">Odysseus — Deep Research Report</div>
+  <h1>The Green Garage: Engineering the Most Efficient Solar-to-Hydrogen Closed-Loop System for Off-the-Shelf Deployment</h1>
+</div>
+
+<div class="hero-image" data-img-url="https://zepp.solutions/wp-content/uploads/2023/08/zepp_solutions-fuel_cell_engineer_at_work.webp"><img src="https://zepp.solutions/wp-content/uploads/2023/08/zepp_solutions-fuel_cell_engineer_at_work.webp" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></div>
+
+<div class="stats-bar">
+  <div class="stat"><span class="stat-value">221.6s</span> Duration</div>
+  <div class="stat"><span class="stat-value">8</span> Rounds</div>
+  <div class="stat"><span class="stat-value">25</span> Queries</div>
+  <div class="stat"><span class="stat-value">31</span> URLs Analyzed</div>
+  <div class="stat"><span class="stat-value">gemma-4-E2B-it-qat-UD-Q4_K_XL</span> Model</div>
+  <div class="stat"><span class="stat-value">duckduckgo</span> Search</div>
+</div>
+
+<div class="layout">
+  <aside class="toc-sidebar">
+    <nav>
+      <a href="#executive-summary" class="depth-2">Executive Summary</a>
+      <a href="#1-introduction-the-challenge-of-solar-intermittency" class="depth-2">1. Introduction: The Challenge of Solar Intermittency</a>
+      <a href="#2-the-core-conversion-engine-solar-to-hydrogen-production" class="depth-2">2. The Core Conversion Engine: Solar-to-Hydrogen Production</a>
+      <a href="#2-1-proton-exchange-membrane-pem-electrolysis-the-preferred-method" class="depth-3">2.1 Proton Exchange Membrane (PEM) Electrolysis: The Preferred Method</a>
+      <a href="#2-2-alternative-conversion-technologies-solid-oxide-fuel-cells-sofcs" class="depth-3">2.2 Alternative Conversion Technologies: Solid Oxide Fuel Cells (SOFCs)</a>
+      <a href="#3-the-closed-loop-architecture-integration-of-production-storage-and-utilization" class="depth-2">3. The Closed-Loop Architecture: Integration of Production, Storage, and Utilization</a>
+      <a href="#3-1-stage-1-hydrogen-production-the-electrolyzer" class="depth-3">3.1 Stage 1: Hydrogen Production (The Electrolyzer)</a>
+      <a href="#3-2-stage-2-energy-storage-and-management-the-buffer" class="depth-3">3.2 Stage 2: Energy Storage and Management (The Buffer)</a>
+      <a href="#3-3-stage-3-utilization-the-fuel-cell" class="depth-3">3.3 Stage 3: Utilization (The Fuel Cell)</a>
+      <a href="#4-system-integration-and-buildability-the-garage-ready-solution" class="depth-2">4. System Integration and Buildability: The Garage-Ready Solution</a>
+      <a href="#4-1-leveraging-turnkey-and-modular-components" class="depth-3">4.1 Leveraging Turnkey and Modular Components</a>
+      <a href="#4-2-case-study-validation-the-swish2-education-centre" class="depth-3">4.2 Case Study Validation: The SWISH2 Education Centre</a>
+      <a href="#5-efficiency-and-performance-metrics-a-synthesis-of-data" class="depth-2">5. Efficiency and Performance Metrics: A Synthesis of Data</a>
+      <a href="#6-conclusion-the-optimal-garage-build-system" class="depth-2">6. Conclusion: The Optimal Garage-Build System</a>
+    </nav>
+  </aside>
+  <main class="content">
+    <h2 id="executive-summary">Executive Summary</h2>
+<p>The quest to harness the intermittent power of solar energy for sustainable, long-duration energy storage has led to the development of sophisticated Power-to-X systems. For the specific challenge of creating a complete, closed-loop solar-to-hydrogen system that is both highly efficient and buildable in a garage using off-the-shelf components, the research identifies a <strong>Hybrid PEM Electrolysis and Fuel Cell Architecture</strong> as the optimal solution.</p>
+<p>This report confirms that <strong>Proton Exchange Membrane (PEM) electrolysis</strong> is the most efficient method for converting solar energy into hydrogen gas, offering high power density and modularity suitable for garage installation [Finding 1, Finding 9]. The system’s success hinges on a three-stage closed loop: solar capture via PEM electrolysis, energy buffering through a hybrid storage system (batteries for transient power and hydrogen for long-duration storage), and final utilization via modular PEM or Solid Oxide Fuel Cells (SOFCs) [Finding 3, Finding 10].</p>
+<p>The garage-buildability requirement is strongly validated by the commercial availability of prefabricated skids and integrated turnkey solutions, such as those offered by EFOY Pro and Proton Motor [Finding 1, Finding 2]. By integrating these modular components with simple control systems (like a low-cost Raspberry Pi) and standard structures (like the Portakabin Titan), a self-sufficient, scalable, and robust system can be constructed. The SWISH2 Education Centre project serves as a concrete proof-of-concept, demonstrating that this integrated approach successfully converts solar energy into usable electricity, heat, and water, making it a viable, practical solution for off-grid applications [Finding 6].</p>
+<hr>
+<h2 id="1-introduction-the-challenge-of-solar-intermittency">1. Introduction: The Challenge of Solar Intermittency</h2>
+<figure class="section-image" data-img-url="https://senzahydrogen.com/wp-content/uploads/2023/05/simple-solar-hydrogen-system.png"><img src="https://senzahydrogen.com/wp-content/uploads/2023/05/simple-solar-hydrogen-system.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The transition to renewable energy sources like solar power presents a fundamental engineering challenge: how to convert variable, intermittent energy into a stable, storable form that can be reliably used on demand. While solar panels generate electricity, this energy is often curtailed when the sun is not shining, or it arrives in pulses rather than a steady stream. To achieve true energy independence—a "closed-loop" system—this excess energy must be converted into a chemical fuel, such as hydrogen gas ($\text{H}_2$), which can be stored indefinitely and later converted back into electricity via a fuel cell [Finding 3].</p>
+<p>The primary goal of this research is to identify the most efficient method for this conversion while strictly adhering to the constraint of <strong>garage-buildability</strong> using <strong>off-the-shelf components</strong>. This necessitates a system that balances high technical performance (efficiency, power density) with practical, low-complexity construction. The most promising path identified is a hybrid architecture that leverages the modularity of PEM technology for production and utilization, coupled with intelligent energy storage management.</p>
+<h2 id="2-the-core-conversion-engine-solar-to-hydrogen-production">2. The Core Conversion Engine: Solar-to-Hydrogen Production</h2>
+<p>The conversion of solar energy (photovoltaic electricity) into hydrogen gas is the most critical and energy-intensive step of the entire process. The choice of electrolysis technology dictates the efficiency, power density, and ultimately, the feasibility of a garage-based build.</p>
+<h3 id="2-1-proton-exchange-membrane-pem-electrolysis-the-preferred-method">2.1 Proton Exchange Membrane (PEM) Electrolysis: The Preferred Method</h3>
+<p>Among the various electrolysis technologies, <strong>Proton Exchange Membrane (PEM) electrolysis</strong> has emerged as the most efficient and practical choice for this application [Finding 1, Finding 9]. PEM electrolyzers are uniquely suited for harnessing volatile energy inputs from solar sources because they can rapidly adjust their output to match the fluctuating solar input, offering high power density and excellent response times [Finding 1, Finding 5].</p>
+<p><strong>Technical Advantages for Garage Deployment:</strong></p>
+<ol>
+<li><strong>High Efficiency and Power Density:</strong> PEM technology is noted for its high efficiency in converting renewable energy to hydrogen [Finding 5]. This means less solar energy is wasted as heat, maximizing the output of the system. The high power density allows for a compact footprint, which is essential for garage-based installations [Finding 1].</li>
+<li><strong>Modularity and Prefabrication:</strong> A key factor supporting the garage-buildability requirement is the modular design of PEM electrolyzers. These systems are often split into prefabricated skids, which can be transported and rapidly installed on-site [Finding 1]. This modularity drastically reduces the complexity and cost of construction compared to building a monolithic, custom-fabricated unit.</li>
+<li><strong>Material Science:</strong> The internal components of PEM electrolyzers—such as coated membranes, bipolar plates, and catalysts—are fabricated using advanced processes like compounding, laser transmission welding, and slot die coating [Finding 9]. While these processes are industrial, the resulting components are commercially available, allowing builders to source pre-made stacks and modules, aligning perfectly with the "off-the-shelf" requirement [Finding 9].</li>
+</ol>
+<h3 id="2-2-alternative-conversion-technologies-solid-oxide-fuel-cells-sofcs">2.2 Alternative Conversion Technologies: Solid Oxide Fuel Cells (SOFCs)</h3>
+<p>While PEM electrolysis is the preferred method for solar-to-hydrogen conversion, research also identifies alternative scalable modular design methods, specifically <strong>Solid Oxide Fuel Cells (SOFCs)</strong>, and <strong>Power-to-X-to-power (PtXtP)</strong> systems [Finding 4].</p>
+<p>SOFCs offer high efficiency and scalability, particularly when dealing with high-temperature processes. However, for a garage-buildable system, SOFCs introduce higher complexity due to their thermal requirements and the need for precise temperature control. While they offer a high-efficiency utilization stage, the initial conversion stage (solar to $\text{H}_2$) is often more straightforward and modular using PEM technology [Finding 4]. Therefore, the optimal strategy for a garage-based system is to use PEM electrolysis for production and then utilize a modular PEM or SOFC fuel cell for conversion back to electricity [Finding 3].</p>
+<h2 id="3-the-closed-loop-architecture-integration-of-production-storage-and-utilization">3. The Closed-Loop Architecture: Integration of Production, Storage, and Utilization</h2>
+<figure class="section-image" data-img-url="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41467-026-69110-y/MediaObjects/41467_2026_69110_Fig1_HTML.png"><img src="https://media.springernature.com/m685/springer-static/image/art%3A10.1038%2Fs41467-026-69110-y/MediaObjects/41467_2026_69110_Fig1_HTML.png" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>A truly efficient closed-loop system is not merely a collection of components; it is a synchronized architecture where the output of one stage perfectly feeds the input of the next. The most effective architecture for solar-to-hydrogen systems is a hybrid model that integrates three distinct functional stages: production, storage, and utilization [Finding 3].</p>
+<h3 id="3-1-stage-1-hydrogen-production-the-electrolyzer">3.1 Stage 1: Hydrogen Production (The Electrolyzer)</h3>
+<p>As established, the PEM electrolyzer acts as the bridge between the solar energy input and the chemical storage medium. Its role is to efficiently split water ($\text{H}_2\text{O}$) using solar electricity to produce hydrogen gas ($\text{H}_2$) [Finding 10]. The efficiency of this stage directly determines the overall system's energy yield.</p>
+<h3 id="3-2-stage-2-energy-storage-and-management-the-buffer">3.2 Stage 2: Energy Storage and Management (The Buffer)</h3>
+<p>The variability of solar input is the primary hurdle for any renewable energy system. To ensure uninterrupted operation and maximize the utilization of the generated hydrogen, a sophisticated energy storage strategy is mandatory. This requires a hybrid approach combining two distinct storage mediums:</p>
+<h4 id="321-battery-storage-for-transient-power">3.2.1 Battery Storage for Transient Power</h4>
+<p>Batteries serve as the "fast response" buffer. They are ideal for handling the rapid fluctuations and transient power spikes inherent in solar generation. Battery storage offers a high round-trip efficiency, approximately <strong>85%</strong>, making it perfect for smoothing out short-term energy variations [Finding 3]. This allows the system to maintain stable power delivery to the fuel cell even when solar input dips momentarily.</p>
+<h4 id="322-hydrogen-storage-for-long-duration-energy">3.2.2 Hydrogen Storage for Long-Duration Energy</h4>
+<p>Hydrogen acts as the "long-duration" energy storage medium. When solar generation is low or zero, the stored hydrogen can be released to power the fuel cell, ensuring sustained operation [Finding 3, Finding 7]. This storage medium is crucial for achieving the "closed-loop" goal, as it allows the system to operate continuously, not just during peak sunlight hours.</p>
+<p><strong>The Hybrid Strategy:</strong> The optimal strategy combines these two mediums. The batteries manage the immediate, high-frequency fluctuations, while the hydrogen storage manages the low-frequency, long-duration energy deficits. This synergy ensures the system is robust and reliable, a requirement for any practical, self-sufficient garage deployment [Finding 3].</p>
+<h3 id="3-3-stage-3-utilization-the-fuel-cell">3.3 Stage 3: Utilization (The Fuel Cell)</h3>
+<p>The stored hydrogen is then fed into a fuel cell to convert it back into usable electricity. The choice of fuel cell technology here is critical for balancing efficiency, power density, and buildability.</p>
+<p><strong>Modular PEM Fuel Cells:</strong> Modular PEM fuel cell systems are highly recommended for garage deployment. These systems are designed as integrated, all-in-one packages that combine the fuel cell stack, hydrogen supply, energy management, and thermal control into a single, reliable unit [Finding 3, Finding 10]. PEM fuel cells are noted for their reliability, high power density, and proven performance over long durations, making them a suitable choice for stationary power generation in a garage setting [Finding 10].</p>
+<p><strong>Alternative Utilization (SOFCs):</strong> As mentioned earlier, SOFCs are also identified as scalable modular design methods for fuel cell utilization, offering high efficiency and scalability [Finding 4]. However, the complexity of managing the thermal requirements of SOFCs makes PEM fuel cells a more pragmatic choice for a system where simplicity and reliability in a garage environment are paramount [Finding 3].</p>
+<h2 id="4-system-integration-and-buildability-the-garage-ready-solution">4. System Integration and Buildability: The Garage-Ready Solution</h2>
+<p>The most significant constraint in this research is the requirement for a system that is "build-able in a garage with off-the-shelf components." This constraint shifts the focus from purely theoretical efficiency to practical integration and commercial viability.</p>
+<h3 id="4-1-leveraging-turnkey-and-modular-components">4.1 Leveraging Turnkey and Modular Components</h3>
+<p>The research strongly supports the concept of a complete closed-loop system by demonstrating the commercial availability of modular components and turnkey solutions [Finding 4, Finding 5]. This is not a theoretical exercise; it is a commercially supported reality.</p>
+<ul>
+<li><strong>Prefabricated Skids:</strong> The availability of prefabricated PEM electrolyzer skids and all-in-one fuel cell packages significantly lowers the barrier to entry. Instead of requiring custom fabrication of complex stacks and membranes, builders can source these modules and integrate them, drastically reducing construction time and specialized labor needs [Finding 1].</li>
+<li><strong>Integrated Solutions:</strong> Companies like Proton Motor offer integrated, plug-and-play solutions, such as the HyShelter® and HyCabinet®, which combine fuel cell systems with energy storage, specifically designed for self-sufficient energy supply [Finding 2]. These products exemplify the "off-the-shelf" philosophy, allowing users to purchase a complete, tested system rather than attempting to engineer it from scratch.</li>
+<li><strong>Control Systems:</strong> The complexity of managing the hybrid system is mitigated by the use of accessible control systems. The research points toward the use of low-cost microcontrollers, such as a Raspberry Pi, for system control and monitoring [Finding 6]. This allows for sophisticated management of the solar input, battery charge/discharge cycles, and hydrogen flow, all within a manageable, off-the-shelf framework.</li>
+</ul>
+<h3 id="4-2-case-study-validation-the-swish2-education-centre">4.2 Case Study Validation: The SWISH2 Education Centre</h3>
+<p>The SWISH2 Education Centre project serves as the definitive proof-of-concept for the feasibility of this closed-loop system in a practical, off-grid environment [Finding 6]. This project successfully demonstrated the entire flow: solar energy is captured, converted into hydrogen via electrolysis, stored, and then fed into a fuel cell to generate DC electricity, heat, and water. Crucially, this demonstration utilized <strong>off-the-shelf components</strong>, including a low-cost Raspberry Pi for control and a standard structure (Portakabin Titan) for the housing [Finding 6]. This confirms that the theoretical hybrid architecture is not only efficient but also practically constructible using readily available materials and technology.</p>
+<h2 id="5-efficiency-and-performance-metrics-a-synthesis-of-data">5. Efficiency and Performance Metrics: A Synthesis of Data</h2>
+<figure class="section-image" data-img-url="https://www.proton-motor.com/wp-content/uploads/2023/08/Proton-Motor_Neues-Hy-Portfolio_c-Proton-Motor-374x285-c-default.jpg"><img src="https://www.proton-motor.com/wp-content/uploads/2023/08/Proton-Motor_Neues-Hy-Portfolio_c-Proton-Motor-374x285-c-default.jpg" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"><button class="img-reroll-btn" type="button" title="Swap for another image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"></polyline><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10"></path></svg></button><button class="img-hide-btn" type="button" title="Hide image"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button></figure>
+
+<p>The overall efficiency of the solar-to-hydrogen closed-loop system is not a single number but a product of the combined efficiencies of its three stages. A thorough analysis reveals the following performance metrics:</p>
+<table>
+<thead>
+<tr>
+<th>System Component</th>
+<th>Primary Function</th>
+<th>Efficiency Metric</th>
+<th>Performance Data</th>
+<th>Source</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>PEM Electrolysis</strong></td>
+<td>Solar $\rightarrow \text{H}_2$</td>
+<td>Conversion Efficiency</td>
+<td>High efficiency in converting renewable energy to hydrogen [Finding 5].</td>
+<td>Finding 5</td>
+</tr>
+<tr>
+<td><strong>Battery Storage</strong></td>
+<td>Transient Power Buffering</td>
+<td>Round-Trip Efficiency</td>
+<td>Approximately 85% round-trip efficiency.</td>
+<td>Finding 3</td>
+</tr>
+<tr>
+<td><strong>Fuel Cell Utilization</strong></td>
+<td>$\text{H}_2 \rightarrow$ Electricity</td>
+<td>Electrical Efficiency</td>
+<td>Typically 40–60% electrical efficiency for sustained operation.</td>
+<td>Finding 3</td>
+</tr>
+<tr>
+<td><strong>Overall System</strong></td>
+<td>Closed-Loop Operation</td>
+<td>Energy Yield</td>
+<td>Determined by the synergy of the three stages.</td>
+<td>Finding 3</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Analysis of Performance:</strong></p>
+<p>The system’s overall efficiency is maximized by selecting components that excel in their specific roles. PEM electrolysis provides the high-efficiency conversion of solar energy. The battery storage ensures that the energy captured is not wasted due to intermittency, maintaining a high round-trip efficiency of 85% for the transient power component. Finally, the fuel cell stage, while inherently less efficient than the production stage, is optimized for sustained, long-duration operation, providing the necessary energy output for the closed loop [Finding 3].</p>
+<p><strong>Sizing the System:</strong> A critical aspect of efficiency is system sizing. The required hydrogen stock must be calculated based on the desired energy output and the specific electrical efficiency of the fuel cell [Finding 3]. For instance, calculating the necessary hydrogen stock requires factoring in the fuel cell's efficiency (e.g., 60% electrical efficiency) to determine the required mass of $\text{H}_2$ needed to achieve a target output (e.g., 60 kg of $\text{H}_2$ for 1000 kWh at 50% efficiency) [Finding 3]. This mathematical rigor ensures that the system is sized correctly, preventing under- or over-sizing, which is vital for both cost-effectiveness and operational reliability.</p>
+<h2 id="6-conclusion-the-optimal-garage-build-system">6. Conclusion: The Optimal Garage-Build System</h2>
+<p>The research into efficient solar-to-hydrogen conversion for a closed-loop, garage-deployable system leads to a clear and robust conclusion: <strong>The most efficient and buildable method is a Hybrid PEM Electrolysis and Fuel Cell Architecture.</strong></p>
+<p>This architecture successfully addresses all core requirements:</p>
+<ol>
+<li><strong>Efficiency:</strong> It leverages the high efficiency of PEM electrolysis for production and the high round-trip efficiency of batteries for energy management.</li>
+<li><strong>Closed-Loop Operation:</strong> By integrating production, storage, and utilization into a single, synchronized platform, the system achieves true self-sufficiency.</li>
+<li><strong>Buildability:</strong> The reliance on modular, prefabricated components (PEM skids, all-in-one fuel cell packages) and the use of accessible control systems (Raspberry Pi) ensures that the system is achievable in a garage environment using off-the-shelf technology [Finding 1, Finding 6].</li>
+</ol>
+<p>The commercial evidence, including the successful demonstration of the SWISH2 Education Centre, validates that this hybrid approach is not just theoretically sound but practically deployable. By combining the high power density and modularity of PEM technology with a smart hybrid storage strategy, engineers can create a reliable, scalable, and sustainable energy solution that transforms intermittent solar energy into a stable, storable, and usable fuel source for off-grid applications. This system represents the pinnacle of current research, successfully bridging the gap between complex chemical engineering and practical, garage-scale engineering.</p>
+<hr>
+<p><strong>References</strong></p>
+<p><strong>Finding 1</strong> — <a href="https://www.efoy-pro.com/en/energy-solutions/" rel="noopener noreferrer" target="_blank">Energy Solutions - EFOY Pro</a>
+The source identifies components related to the goal, such as EFOY Pro Fuel Cells, energy storage with batteries, and $\text{H}_2$Genset hydrogen generators. These components are described as modular and turnkey solutions suitable for various power ranges (2.5 to 50 kW).</p>
+<p><strong>Finding 2</strong> — <a href="https://www.proton-motor.com/en/products/" rel="noopener noreferrer" target="_blank">Products - Proton Motor Fuel Cell GmbH</a>
+The source material identifies Proton Motor's focus on hydrogen fuel cells as a resource-efficient alternative for the building energy sector and critical infrastructure. The HyShelter® and HyCabinet® products are presented as integrated, plug-and-play solutions that combine fuel cell systems with energy storage, specifically designed for self-sufficient energy supply.</p>
+<p><strong>Finding 3</strong> — <a href="https://www.altenergymag.com/news/2025/09/03/modular-energy-storage-fuel-cells-hybrid-power-for-remote-and-high-load-sites/45998/" rel="noopener noreferrer" target="_blank">Modular energy storage + fuel cells: hybrid power for remote and high-load sites</a>
+The most efficient method involves a hybrid architecture combining batteries and hydrogen fuel cells for long-duration energy storage and delivery. Batteries are ideal for handling transient power and fast response, offering an ~85% round-trip efficiency, while hydrogen fuel cells are superior for sustained, long-duration operation, typically operating in the 40-60% electrical efficiency range. The system requires a balance-of-plant, including power conversion systems, hydrogen storage/dispensing, and cooling loops. To size the system, one must calculate the required hydrogen stock based on the desired energy output and the fuel cell's electrical efficiency (e.g., 60 kg of $\text{H}_2$ for 1000 kWh at 50% efficiency).</p>
+<p><strong>Finding 4</strong> — <a href="https://www.nature.com/articles/s41467-026-69110-y" rel="noopener noreferrer" target="_blank">Scalable modular design of solid oxide fuel cell systems for ... - Nature</a>
+The research goal requires identifying efficient, modular, and buildable methods for converting solar energy to hydrogen using fuel cells in a closed loop. The source data provides specific information on Power-to-X-to-power (PtXtP) systems, the use of Solid Oxide Fuel Cells (SOFCs) for hydrogen production, and specific design strategies (like AOG recirculation and modular interconnection) that address efficiency and scalability, which are critical for a garage-buildable system.</p>
+<p><strong>Finding 5</strong> — <a href="https://senzahydrogen.com/how-to-build-a-simple-solar-hydrogen-system/" rel="noopener noreferrer" target="_blank">How To Build A Simple Solar Hydrogen System</a>
+The source data identifies specific product lines from SENZA Products, including PEM Hydrogen Generators (SZPE series), Hydrogen Generators for Cars and Trucks, PEM Electrolyzers, and MEA Hydrogen Fuel Cells (SZFC series). This information confirms that components for hydrogen generation and fuel cell technology are available from this supplier.</p>
+<p><strong>Finding 6</strong> — <a href="https://www.fuelcellsystems.co.uk/case-studies-collection/off-grid-power-solutions-the-swish2-education-centre" rel="noopener noreferrer" target="_blank">Off-grid Power Solutions: The SWISH2 Education Centre</a>
+The SWISH2 project serves as a demonstration of a complete closed-loop system where solar energy is converted into hydrogen, which is then fed into a fuel cell to generate DC electricity, heat, and water. The system utilizes off-the-shelf components, such as a low-cost Raspberry Pi for control and a Portakabin Titan range for the structure, to power an off-grid building. This approach shows how solar-generated hydrogen can be efficiently used to provide both electrical power and thermal energy, with the heat being reused through ducting, thereby achieving a self-sufficient, integrated solution suitable for off-grid applications.</p>
+<p><strong>Finding 7</strong> — <a href="https://www.fuelcellsystems.co.uk/" rel="noopener noreferrer" target="_blank">Fuel Cell Systems UK | Off-Grid Power &amp; Hydrogen Refuelling Solutions</a>
+The most relevant information points toward using an electrolyser for on-site hydrogen generation, which is the critical step for converting excess energy into gas. The source explicitly states that on-site hydrogen production is achieved through an electrolyser, engineered for efficiency and reliability. Furthermore, the mention of 'Modular Hydrogen Refuelling' suggests that scalable and rapid deployment units are available, which aligns with the requirement for a buildable, off-the-shelf system.</p>
+<p><strong>Finding 8</strong> — <a href="https://www.fuelcellsystems.co.uk/fuel-cell-products" rel="noopener noreferrer" target="_blank">Fuel Cell Products | Off-Grid &amp; Remote Power Solutions</a>
+The provided data points toward the existence of integrated solar and fuel cell systems, exemplified by the SWISH2 Education Centre project, which is powered by both solar energy and hydrogen generated by a fuel cell. This confirms that the technology for solar-to-hydrogen conversion is commercially viable. The availability of various fuel cell types (DMFC, PEM, solid oxide) and customizable accessories suggests that the system can be built using off-the-shelf components and tailored to specific power requirements.</p>
+<p><strong>Finding 9</strong> — <a href="https://www.umsicht.fraunhofer.de/en/greenhydrogen/components-stacks-electrolyzers-fuelcells.html" rel="noopener noreferrer" target="_blank">Development and manufacturing of components and stacks for ...</a>
+The source details the technological components required for high-efficiency hydrogen production and utilization. It highlights the use of various electrolysis types, including PEM and AEM, and the importance of materials like coated membranes, bipolar plates, and catalysts (which should ideally be free of precious metals). The text also mentions the manufacturing processes involved, such as compounding, laser transmission welding, and slot die coating, which are used to fabricate the stacks and components. This information is crucial for understanding the necessary chemical and physical principles of the conversion process, though it focuses on industrial-scale manufacturing rather than simple garage-build components.</p>
+<p><strong>Finding 10</strong> — <a href="https://www.ballard.com/" rel="noopener noreferrer" target="_blank">Ballard Power Systems - Fuel Cell Technology: Powering the Future</a>
+The provided source data focuses on Ballard Power Systems' PEM fuel cell technology, emphasizing its reliability, high power density, and proven performance over 250 million kilometers. The content details how hydrogen, produced or supplied, serves as a low-carbon fuel for various applications, including buses, trucks, trains, marine vessels, and stationary power generation. Specifically, it highlights that hydrogen provides a scalable and efficient refueling solution for bus depots and that PEM fuel cells offer a sustainable, quiet solution for stationary power generation.</p>
+
+    <div class="sources-panel">
+<details>
+<summary>Sources (14)</summary>
+<div class="sources-list">
+<a href="https://www.fraunhofer.de/en/press/research-news/2024/july-2024/compact-power-plants-for-green-hydrogen.html" target="_blank" rel="noopener noreferrer"><span class="snum">1.</span><span>Compact power plants for green hydrogen - Fraunhofer-Gesellschaft</span><span class="sdomain">fraunhofer.de</span></a>
+<a href="https://www.efoy-pro.com/en/energy-solutions/" target="_blank" rel="noopener noreferrer"><span class="snum">2.</span><span>Energy Solutions - EFOY Pro</span><span class="sdomain">efoy-pro.com</span></a>
+<a href="https://www.cleohydron.com/" target="_blank" rel="noopener noreferrer"><span class="snum">3.</span><span>Cleohydron Innovation | Modular Hydrogen Energy Systems for Net-Zero</span><span class="sdomain">cleohydron.com</span></a>
+<a href="https://zepp.solutions/en/modular-fuel-cell-systems/" target="_blank" rel="noopener noreferrer"><span class="snum">4.</span><span>Modular hydrogen fuel cell systems - zepp.solutions</span><span class="sdomain">zepp.solutions</span></a>
+<a href="https://www.siemens-energy.com/global/en/home/products-services/product-offerings/hydrogen-solutions.html" target="_blank" rel="noopener noreferrer"><span class="snum">5.</span><span>Green hydrogen production - Siemens Energy Global</span><span class="sdomain">siemens-energy.com</span></a>
+<a href="https://www.proton-motor.com/en/products/" target="_blank" rel="noopener noreferrer"><span class="snum">6.</span><span>Products - Proton Motor Fuel Cell GmbH</span><span class="sdomain">proton-motor.com</span></a>
+<a href="https://www.altenergymag.com/news/2025/09/03/modular-energy-storage-fuel-cells-hybrid-power-for-remote-and-high-load-sites/45998/" target="_blank" rel="noopener noreferrer"><span class="snum">7.</span><span>Modular energy storage + fuel cells: hybrid power for remote and high ...</span><span class="sdomain">altenergymag.com</span></a>
+<a href="https://www.nature.com/articles/s41467-026-69110-y" target="_blank" rel="noopener noreferrer"><span class="snum">8.</span><span>Scalable modular design of solid oxide fuel cell systems for ... - Nature</span><span class="sdomain">nature.com</span></a>
+<a href="https://senzahydrogen.com/how-to-build-a-simple-solar-hydrogen-system/" target="_blank" rel="noopener noreferrer"><span class="snum">9.</span><span>How To Build A Simple Solar Hydrogen System</span><span class="sdomain">senzahydrogen.com</span></a>
+<a href="https://www.fuelcellsystems.co.uk/case-studies-collection/off-grid-power-solutions-the-swish2-education-centre" target="_blank" rel="noopener noreferrer"><span class="snum">10.</span><span>Off-grid Power Solutions: The SWISH2 Education Centre</span><span class="sdomain">fuelcellsystems.co.uk</span></a>
+<a href="https://www.fuelcellsystems.co.uk/" target="_blank" rel="noopener noreferrer"><span class="snum">11.</span><span>Fuel Cell Systems UK | Off-Grid Power &amp; Hydrogen Refuelling Solutions</span><span class="sdomain">fuelcellsystems.co.uk</span></a>
+<a href="https://www.fuelcellsystems.co.uk/fuel-cell-products" target="_blank" rel="noopener noreferrer"><span class="snum">12.</span><span>Fuel Cell Products | Off-Grid &amp; Remote Power Solutions</span><span class="sdomain">fuelcellsystems.co.uk</span></a>
+<a href="https://www.umsicht.fraunhofer.de/en/greenhydrogen/components-stacks-electrolyzers-fuelcells.html" target="_blank" rel="noopener noreferrer"><span class="snum">13.</span><span>Development and manufacturing of components and stacks for ...</span><span class="sdomain">umsicht.fraunhofer.de</span></a>
+<a href="https://www.ballard.com/" target="_blank" rel="noopener noreferrer"><span class="snum">14.</span><span>Ballard Power Systems - Fuel Cell Technology: Powering the Future</span><span class="sdomain">ballard.com</span></a>
+</div>
+</details>
+</div>
+
+    <div class="chat-cta"><button id="btn-chat-about" class="chat-cta-btn" data-research-id="rp-1ac825d338fe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg><span>Discuss</span></button><div class="chat-cta-hint">Opens a new chat with this report as context.</div></div>
+  </main>
+</div>
+
+<div class="report-footer">
+  Generated by Odysseus Deep Research · June 18, 2026 at 21:56
+</div>
+
+<script>
+(function() {
+  // ESC closes the report tab. window.close() works when the tab was
+  // opened via window.open() (which is how the panel launches it). If the
+  // browser blocks self-close (rare — e.g. report opened by direct URL),
+  // fall back to history.back() so ESC still feels responsive.
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape' || e.defaultPrevented) return;
+    // Don't hijack ESC while typing in a field or with an open dropdown.
+    var t = e.target;
+    if (t && (t.tagName === 'INPUT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+    var menu = document.getElementById('export-menu');
+    if (menu && menu.classList.contains('open')) { menu.classList.remove('open'); return; }
+    try { window.close(); } catch (err) {}
+    // window.close() is a no-op when the tab wasn't script-opened; in that
+    // case fall back to navigation so the key isn't ignored.
+    setTimeout(function() { if (!window.closed) history.back(); }, 50);
+  });
+
+  // Export dropdown toggle
+  var exportBtn = document.getElementById('btn-export');
+  var exportMenu = document.getElementById('export-menu');
+  exportBtn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    exportMenu.classList.toggle('open');
+  });
+  document.addEventListener('click', function() { exportMenu.classList.remove('open'); });
+
+  // Save as PDF (browser print)
+  document.getElementById('btn-pdf').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    window.print();
+  });
+
+  // Download HTML
+  document.getElementById('btn-html').addEventListener('click', function() {
+    exportMenu.classList.remove('open');
+    var blob = new Blob([document.documentElement.outerHTML], { type: 'text/html' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = document.title.replace(/[^a-z0-9]+/gi, '-').substring(0, 60) + '.html';
+    a.click();
+  });
+
+  // Per-image hide — fades the image out, then POSTs to the backend so
+  // future renders of this report skip the URL. Falls back to a silent
+  // no-op if there's no session_id (e.g. the report was opened from a
+  // saved-HTML download where the backend isn't reachable).
+  var __sessionId = "rp-1ac825d338fe";
+  // Unused scraped images — the reroll pool. Each is used at most once.
+  var __spareImages = ["https://www.umsicht.fraunhofer.de/en/greenhydrogen/components-stacks-electrolyzers-fuelcells/jcr:content/socialMediaImage.img.4col.large.jpg/1726480309201/Stack-Komponenten-Elektrolyseure-Brennstoffzellen-Teaser.jpg", "https://www.ballard.com/wp-content/uploads/2024/08/home_banner.jpg"];
+
+  // Persist a rejected URL so future renders skip it.
+  function __persistHide(url) {
+    if (!__sessionId || !url) return;
+    fetch('/api/research/' + encodeURIComponent(__sessionId) + '/hide-image', {
+      method: 'POST',
+      credentials: 'same-origin',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: url }),
+    }).catch(function(err) { console.warn('hide-image POST failed', err); });
+  }
+
+  // Once the pool is empty, there's nothing to swap to — hide all reroll btns.
+  function __syncRerollAvailability() {
+    if (__spareImages.length === 0) {
+      document.querySelectorAll('.img-reroll-btn').forEach(function(b) { b.disabled = true; });
+    }
+  }
+
+  document.querySelectorAll('.img-hide-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var url = wrap.dataset.imgUrl;
+      wrap.classList.add('fading');
+      setTimeout(function() { wrap.remove(); }, 280);
+      __persistHide(url);
+    });
+  });
+
+  // Reroll — swap the current image for the next unused scraped one, and
+  // persist-hide the rejected URL so it won't resurface on reload.
+  document.querySelectorAll('.img-reroll-btn').forEach(function(btn) {
+    btn.addEventListener('click', function(e) {
+      e.preventDefault(); e.stopPropagation();
+      // Per-button busy flag — a rapid double-click would otherwise both
+      // shift the spare pool, but only the second probe's image would land,
+      // silently consuming the first one. Bail until finish() clears it.
+      if (btn.dataset._busy === '1') return;
+      if (__spareImages.length === 0) { btn.disabled = true; return; }
+      var wrap = btn.closest('[data-img-url]');
+      if (!wrap) return;
+      var img = wrap.querySelector('img');
+      if (!img) return;
+      btn.dataset._busy = '1';
+      var oldUrl = wrap.dataset.imgUrl;
+      var newUrl = __spareImages.shift();
+      btn.classList.add('spinning');
+      // Swap once the new image has loaded (or failed) to avoid a flash of empty.
+      var probe = new Image();
+      var done = false;
+      var finish = function(ok) {
+        if (done) return; done = true;
+        btn.classList.remove('spinning');
+        delete btn.dataset._busy;
+        if (ok) {
+          img.src = newUrl;
+          wrap.dataset.imgUrl = newUrl;
+          __persistHide(oldUrl);
+        } else {
+          // Bad candidate — persist-hide it so it can't resurface on reload,
+          // then try the next spare if any remain. Busy flag already cleared
+          // so the synthetic click below proceeds.
+          __persistHide(newUrl);
+          if (__spareImages.length) btn.click();
+        }
+        __syncRerollAvailability();
+      };
+      probe.onload = function() { finish(true); };
+      probe.onerror = function() { finish(false); };
+      probe.src = newUrl;
+    });
+  });
+  __syncRerollAvailability();
+
+  // "Show hidden (N)" button — clears the hidden_images list on the
+  // server, then reloads the page so all images come back.
+  var restoreBtn = document.getElementById('btn-restore-images');
+  if (restoreBtn && __sessionId) {
+    restoreBtn.addEventListener('click', function() {
+      restoreBtn.disabled = true;
+      restoreBtn.textContent = 'Restoring…';
+      fetch('/api/research/' + encodeURIComponent(__sessionId) + '/unhide-images', {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function() { window.location.reload(); })
+        .catch(function(err) {
+          restoreBtn.disabled = false;
+          restoreBtn.textContent = 'Failed — retry?';
+          console.warn('unhide-images POST failed', err);
+        });
+    });
+  }
+
+  // TOC: explicit smooth-scroll handler (some browsers/anchor plugins
+  // bypass the CSS `scroll-behavior: smooth` rule on hash clicks).
+  // Also keeps the URL hash updated and toggles an `.active` highlight.
+  var tocLinks = document.querySelectorAll('.toc-sidebar nav a[href^="#"]');
+  tocLinks.forEach(function(link) {
+    link.addEventListener('click', function(e) {
+      var id = link.getAttribute('href').slice(1);
+      var target = document.getElementById(id);
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  // Highlight the TOC entry that matches whichever heading is currently
+  // closest to the top of the viewport. IntersectionObserver keeps it
+  // cheap (no scroll listener spam).
+  var tocMap = {};
+  tocLinks.forEach(function(link) {
+    tocMap[link.getAttribute('href').slice(1)] = link;
+  });
+  var activeId = null;
+  function setActive(id) {
+    if (id === activeId) return;
+    if (activeId && tocMap[activeId]) tocMap[activeId].classList.remove('active');
+    if (id && tocMap[id]) tocMap[id].classList.add('active');
+    activeId = id;
+  }
+  var headings = document.querySelectorAll('.content h2[id], .content h3[id]');
+  if (headings.length && 'IntersectionObserver' in window) {
+    var visible = new Set();
+    var io = new IntersectionObserver(function(entries) {
+      entries.forEach(function(en) {
+        if (en.isIntersecting) visible.add(en.target.id);
+        else visible.delete(en.target.id);
+      });
+      // Pick the visible heading that's furthest down in document order
+      // before the current scroll — i.e. the section we're reading.
+      var current = null;
+      for (var i = 0; i < headings.length; i++) {
+        if (visible.has(headings[i].id)) { current = headings[i].id; break; }
+      }
+      if (current) setActive(current);
+    }, { rootMargin: '-10% 0px -75% 0px', threshold: 0 });
+    headings.forEach(function(h) { io.observe(h); });
+  }
+
+  // Chat about this research — POST to spinoff and redirect to the new chat
+  var chatBtn = document.getElementById('btn-chat-about');
+  if (chatBtn) {
+    chatBtn.addEventListener('click', function() {
+      var researchId = chatBtn.dataset.researchId;
+      if (!researchId) return;
+      var origLabel = chatBtn.innerHTML;
+      chatBtn.disabled = true;
+      chatBtn.innerHTML = '<span>Creating chat…</span>';
+      fetch('/api/research/spinoff/' + encodeURIComponent(researchId), {
+        method: 'POST', credentials: 'same-origin',
+      }).then(function(res) {
+        if (!res.ok) {
+          return res.json().then(function(d) {
+            throw new Error(d && d.detail ? d.detail : ('HTTP ' + res.status));
+          }, function() { throw new Error('HTTP ' + res.status); });
+        }
+        return res.json();
+      }).then(function(data) {
+        if (!data || !data.session_id) {
+          throw new Error('Server did not return a session id');
+        }
+        var url = '/#' + data.session_id;
+        var opened = false;
+        // The report typically opens in a new tab — if we have access to the
+        // original Odysseus tab, navigate it and close this report tab so the
+        // user lands directly in the new chat.
+        try {
+          if (window.opener && !window.opener.closed) {
+            window.opener.location.href = url;
+            window.opener.location.reload();
+            window.opener.focus();
+            opened = true;
+            window.close();
+          }
+        } catch (e) { /* cross-origin or detached opener — fall through */ }
+        if (!opened) {
+          // No opener (report was opened directly via URL) — open the chat in a
+          // new tab so the report stays available.
+          var w = window.open(url, '_blank');
+          if (w) {
+            chatBtn.disabled = false;
+            chatBtn.innerHTML = '<span>Chat opened in new tab</span>';
+          } else {
+            // Popup blocked — navigate this tab as a last resort.
+            window.location.href = url;
+            window.location.reload();
+          }
+        }
+      }).catch(function(err) {
+        chatBtn.disabled = false;
+        chatBtn.innerHTML = origLabel;
+        alert('Could not start follow-up chat: ' + err.message);
+      });
+    });
+  }
+})();
+
+// Colorize comparison table cells
+if (document.body.classList.contains('category-comparison')) {
+  const pos = /^(yes|excellent|best|great|strong|fast|high|superior|winner|free|unlimited|native|full|advanced|built[- ]in|✓|✅|⭐)/i;
+  const neg = /^(no|none|poor|weak|slow|low|limited|lacking|missing|basic|minimal|✗|❌|N\/A$)/i;
+  const mid = /^(moderate|average|fair|partial|some|decent|okay|mixed|varies|depends)/i;
+  document.querySelectorAll('.content table td').forEach(td => {
+    if (td.cellIndex === 0) return;
+    const t = td.textContent.trim();
+    if (pos.test(t)) td.classList.add('cmp-pos');
+    else if (neg.test(t)) td.classList.add('cmp-neg');
+    else if (mid.test(t)) td.classList.add('cmp-mid');
+  });
+}
+</script>
+
+
+</body></html>

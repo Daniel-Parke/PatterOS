@@ -8,6 +8,7 @@ The following are reserved and may not be used in a way that suggests affiliatio
 
 - **Patter**
 - **PatterOS**
+- **PatterStage**
 - **PatterTech**
 - Any name following the pattern **Patter\*** in a project, product, distribution, domain, or marketing name
 

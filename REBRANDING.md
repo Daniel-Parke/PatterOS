@@ -16,7 +16,7 @@ If you modify this software and distribute your version, you must rebrand it. Th
 
 4. **Use your own colours and logos**: Do not replicate the Cherenkov palette from [`branding/guidelines/COLORS.md`](branding/guidelines/COLORS.md) as your product theme.
 
-5. **Read the trademark policy** — [TRADEMARK.md](TRADEMARK.md) has the full rules.
+5. **Read the trademark policy**, [TRADEMARK.md](TRADEMARK.md) has the full rules.
 
 You may still say your project is *compatible with* or *based on* PatterOS if that is accurate, as long as you make clear it is not official or endorsed.
 

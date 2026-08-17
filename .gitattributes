@@ -1,0 +1,30 @@
+# Normalise text files in the repository, and let git pick the working-tree
+# ending per platform.
+* text=auto
+
+# Shell scripts are the exception: they must ALWAYS check out with LF endings,
+# on every platform. A shell script with CRLF endings fails on Linux with a
+# confusing error ("bad interpreter" or "$'\r': command not found"), and this
+# repository is maintained from Windows where core.autocrlf=true would
+# otherwise rewrite them on checkout.
+*.sh text eol=lf
+
+# Same reasoning for anything else that a Linux machine executes or parses.
+*.service   text eol=lf
+*.conf      text eol=lf
+*.yml       text eol=lf
+*.yaml      text eol=lf
+.editorconfig text eol=lf
+
+# Binary assets: never touch these.
+*.docx binary
+*.pdf  binary
+*.odt  binary
+*.ods  binary
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.zip  binary
+*.gguf binary
