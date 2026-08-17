@@ -246,13 +246,29 @@ nvidia_state(){
 free_gb(){ df -PBG "$1" 2>/dev/null | awk 'NR==2{gsub(/G/,"",$4); print $4+0}'; }
 
 # VRAM in whole GB, or empty if we genuinely cannot tell. Never guess.
+#
+# NVIDIA is nvidia-smi. AMD and Intel have no equivalent that we install:
+# glxinfo comes from mesa-utils, which is not in BASE_PKGS, so a machine that
+# only has what this script put on it has no glxinfo. The amdgpu/i915 sysfs
+# node is always there when the kernel can see the card, and is what ReBAR
+# detection and -ngl both need. Without it, AMD installs silently used
+# -ngl 999 and skipped the ReBAR workaround.
 vram_gb(){
-  local mb=""
+  local mb="" b f this=0
   if command -v nvidia-smi >/dev/null 2>&1 && [[ "$(nvidia_state)" == "ok" ]]; then
     mb="$(LC_ALL=C nvidia-smi --query-gpu=memory.total --format=csv,noheader,nounits 2>/dev/null | sort -rn | head -1 || true)"
   fi
   if [[ -z "${mb}" ]] && command -v glxinfo >/dev/null 2>&1; then
     mb="$(LC_ALL=C glxinfo -B 2>/dev/null | awk -F': *' '/Video memory/{gsub(/MB.*/,"",$2); print $2+0; exit}' || true)"
+  fi
+  if [[ -z "${mb}" ]]; then
+    for f in /sys/class/drm/card*/device/mem_info_vram_total; do
+      [[ -r "${f}" ]] || continue
+      b="$(tr -dc '0-9' < "${f}" 2>/dev/null || true)"
+      [[ "${b}" =~ ^[1-9][0-9]*$ ]] || continue
+      this=$(( b / 1024 / 1024 ))
+      (( this > ${mb:-0} )) && mb="${this}"
+    done
   fi
   [[ -n "${mb}" && "${mb}" != "0" ]] && echo $(( mb / 1024 )) || echo ""
 }
@@ -279,6 +295,8 @@ vulkan_health(){
   command -v vulkaninfo >/dev/null 2>&1 && summary="$(LC_ALL=C vulkaninfo --summary 2>/dev/null || true)"
 
   # --- driver in use ---
+  # Prefer the GPU0 device block. Instance layers list "Mesa Overlay" first and
+  # that is not a driver.
   drv="$(awk -F'= *' '/driverName/{print $2; exit}' <<<"${summary}" | tr -d ' ' || true)"
   if [[ "${drv}" == *"amdvlk"* || "${drv}" == *"AMDVLK"* ]]; then
     warn "Your system is using the AMDVLK Vulkan driver."
@@ -287,7 +305,10 @@ vulkan_health(){
   fi
 
   # --- Mesa version ---
-  mesa="$(awk -F'Mesa ' '/driverInfo|Mesa/{print $2; exit}' <<<"${summary}" | awk '{print $1}' || true)"
+  # Match driverInfo only. `vulkaninfo --summary` lists instance layers first,
+  # including "Mesa Overlay layer", and a looser /Mesa/ match reported that as
+  # the graphics driver on this AMD machine.
+  mesa="$(awk -F'Mesa ' '/driverInfo/{print $2; exit}' <<<"${summary}" | awk '{print $1}' || true)"
   [[ -z "${mesa}" ]] && mesa="$(dpkg-query -W -f='${Version}' mesa-vulkan-drivers 2>/dev/null | sed 's/[^0-9.].*//' || true)"
   if [[ -n "${mesa}" ]]; then
     local maj min; maj="${mesa%%.*}"; min="$(cut -d. -f2 <<<"${mesa}")"
@@ -329,12 +350,20 @@ vulkan_health(){
 # ----- detect GPU by PCI vendor ID (robust; never by name text) -------------
 step "Detecting your GPU"
 command -v lspci >/dev/null 2>&1 || { apt-get update -qq || true; apt-get install -y -qq pciutils || true; }
+# DETECTED_VENDOR is the card that is actually there. VENDOR is the path we
+# take. --cpu sets VENDOR to cpu without forgetting the card, because a later
+# --skip-build can still reuse a vulkan binary and the unit then needs the
+# AMD/Intel workarounds. Detecting only when FORCE_CPU is off made
+# --cpu --skip-build strip GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM from a live
+# AMD service.
+DETECTED_VENDOR="cpu"
 VENDOR="cpu"
+ids="$(lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' | grep -oE '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' | tr -d '[]' | cut -d: -f1 | tr 'A-F' 'a-f' || true)"
+if   grep -q '10de' <<<"${ids}"; then DETECTED_VENDOR="nvidia"
+elif grep -q '1002' <<<"${ids}"; then DETECTED_VENDOR="amd"
+elif grep -q '8086' <<<"${ids}"; then DETECTED_VENDOR="intel"; fi
 if [[ "${FORCE_CPU}" != "yes" ]]; then
-  ids="$(lspci -nn 2>/dev/null | grep -iE 'vga|3d|display' | grep -oE '\[[0-9a-fA-F]{4}:[0-9a-fA-F]{4}\]' | tr -d '[]' | cut -d: -f1 | tr 'A-F' 'a-f' || true)"
-  if   grep -q '10de' <<<"${ids}"; then VENDOR="nvidia"
-  elif grep -q '1002' <<<"${ids}"; then VENDOR="amd"
-  elif grep -q '8086' <<<"${ids}"; then VENDOR="intel"; fi
+  VENDOR="${DETECTED_VENDOR}"
 fi
 NEED_REBOOT="no"
 NV_BEFORE="n/a"; [[ "${VENDOR}" == "nvidia" ]] && NV_BEFORE="$(nvidia_state)"
@@ -975,6 +1004,18 @@ if [[ "${EXISTING}" != "${BUILT}" || "${REBUILD}" == "yes" || ! -f "${MARKER}" ]
 fi
 good "Engine built (${BUILT})."
 
+# vulkan_health ran in the driver step against VENDOR. Under --cpu that is
+# cpu, so VK_ENV stayed empty. If the engine we are actually going to run is
+# still vulkan (the --skip-build reuse path), fill the workarounds now or the
+# unit rewrite drops them from a working AMD/Intel service.
+if [[ "${BUILT}" == "vulkan" && ${#VK_ENV[@]} -eq 0 ]]; then
+  if [[ "${DETECTED_VENDOR}" == "amd" || "${DETECTED_VENDOR}" == "intel" ]]; then
+    VENDOR="${DETECTED_VENDOR}"
+    vulkan_health
+    [[ "${FORCE_CPU}" == "yes" ]] && VENDOR="cpu"
+  fi
+fi
+
 # --models-max 1 keeps ONE model resident at a time. This applies to every
 # build, including CPU.
 #
@@ -1137,12 +1178,14 @@ install_unit(){
   info "That is deliberate: if you followed the guide and added an API key or"
   info "changed the address it listens on, we are not going to throw that away."
   local a="n"
-  if [[ "${YES}" != "yes" ]]; then
+  if [[ "${REPLACE_UNITS}" == "yes" ]]; then
+    a="y"
+  elif [[ "${YES}" != "yes" ]]; then
     read -r -p "    Replace it with the standard PatterOS version anyway? [y/N]: " a </dev/tty || true
   else
     info "(-y given, so your version is kept. Use --replace-units to overwrite.)"
   fi
-  if [[ "${REPLACE_UNITS}" == "yes" || "${a,,}" == "y" || "${a,,}" == "yes" ]]; then
+  if [[ "${a,,}" == "y" || "${a,,}" == "yes" ]]; then
     printf '%s' "${content}" > "${path}"; printf '%s\n' "${now}" > "${stamp}"
     UNIT_WROTE="yes"
     info "Replaced ${unit}. The previous version is still at ${backup}."

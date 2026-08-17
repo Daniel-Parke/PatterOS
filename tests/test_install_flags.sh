@@ -155,6 +155,8 @@ PRESEED_UNIT=$'[Service]\nExecStart=/x/llama-server --api-key hunter2\n'
 run_case "hand-edited unit, --replace-units" --replace-units --no-models --no-odysseus --skip-firewall
 PRESEED_UNIT=""
 hasnt "${UNIT}" "hunter2" "overwrites when explicitly asked"
+hasnt "${OUT}" "your version is kept" "does not say it kept the file while replacing it"
+has "${OUT}" "Replaced llama.service" "says it replaced the file"
 if [[ -f "${UNIT}.patteros-backup" ]]; then ok "still leaves a backup"; else bad "still leaves a backup"; fi
 
 # ---------------------------------------------------------------------------

@@ -9,10 +9,37 @@ changed on their machine and why it matters to them.
 ## [Unreleased]
 
 Found while building out the test suite for the installer and then running it
-for real, twice, on an RTX 3090 Ti. Every fix below shares a shape: the script
-reported success while quietly doing something other than what it said.
+for real, twice, on an RTX 3090 Ti, and then again on an RX 7900 XTX. Every fix
+below shares a shape: the script reported success while quietly doing something
+other than what it said.
 
 ### Fixed
+
+- **AMD VRAM was invisible unless `mesa-utils` happened to be installed.**
+  `vram_gb()` asked `nvidia-smi`, then `glxinfo`. `glxinfo` comes from
+  `mesa-utils`, which is not in the base package list, so a machine that only
+  has what this installer put on it has neither. Resizable BAR detection and
+  the partial `-ngl` offload both use that number, so an AMD or Intel card
+  with ReBAR off and an 8 GB card asked to hold a 19 GB model both took the
+  `-ngl 999` path and skipped the workaround. The function now reads
+  `/sys/class/drm/card*/device/mem_info_vram_total` when the two userland
+  tools are missing.
+- **The graphics driver was reported as "Mesa Overlay".** `vulkaninfo --summary`
+  lists instance layers first, and one of them is named `Mesa Overlay layer`.
+  Matching `/driverInfo|Mesa/` took that line, so a current Mesa 25.2.8 install
+  was printed as the overlay layer instead of the driver. The parser now reads
+  `driverInfo` only.
+- **`-y --replace-units` said it had kept the edited unit, then replaced it.**
+  `install_unit()` printed "your version is kept" whenever `-y` was set, and
+  only afterwards noticed `--replace-units`. The keep message is now skipped
+  when replacement was requested.
+- **`--cpu --skip-build` on an AMD Vulkan install stripped the ReBAR workaround
+  from the live service.** `--cpu` skipped PCI detection entirely, so
+  `vulkan_health` never ran, `VK_ENV` stayed empty, and the unit rewrite dropped
+  `GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM` and `RADV_PERFTEST` while still running
+  the vulkan binary (`-ngl 999`). The card is now still detected under `--cpu`,
+  and if the engine being reused is vulkan the workarounds are filled in before
+  the unit is written.
 
 - **The workspace could not start at all, and the installer said it had.**
   Odysseus is pinned to a specific commit so that everyone installs the same
@@ -95,7 +122,7 @@ reported success while quietly doing something other than what it said.
   skip-phases dialogues, the edited-service-file question and the offer to
   reboot), every command-line flag and environment override, and every
   uninstaller flag including `--dry-run`, `--all` and the deletion guard rails.
-  With the existing hardware matrix that is 463 assertions in the stubbed
+  With the existing hardware matrix that is 459 assertions in the stubbed
   suites, plus the uninstaller reversal checks that still run only in a
   disposable container.
 
@@ -114,16 +141,20 @@ reported success while quietly doing something other than what it said.
 - The workspace service gets a start limit, so a workspace that cannot start
   gives up after ten attempts instead of retrying every ten seconds for ever on
   a machine whose owner has been told everything is fine.
-- The stub harness is now faithful in seven places where it was not, each of
+- The stub harness is now faithful in eight places where it was not, each of
   which had been hiding or inventing a failure: a masked command is genuinely
   absent from `PATH` rather than merely broken, a checkout remembers which tag
   it is at, `systemctl status` can report a unit it does not know, the restart
   counter can climb so a crash loop is reachable in a test, `ufw` keeps track of
   which rules it has deleted and refuses a `/tcp` delete for a rule stored
-  without a protocol, and `dpkg -l` can pad its output past a pipe buffer. That
-  last one matters: against a three-line stub, the `--lact` SIGPIPE bug passed
-  its test on every run. The hardware matrix also resets its scratch home, so
-  running it twice in a row no longer produces different results.
+  without a protocol, `dpkg -l` can pad its output past a pipe buffer, and
+  `STUB_HAS_HF=0` now masks a real `hf` on `PATH` the same way `nvcc` is masked.
+  That last one matters: against a developer machine with `huggingface_hub`
+  in `~/.local/bin`, the "only huggingface-cli" case called the real downloader.
+  The `--lact` SIGPIPE bug passed against a three-line stub on every run. The
+  hardware matrix also resets its scratch home, so running it twice in a row no
+  longer produces different results. The vulkaninfo stub prepends the Mesa
+  Overlay instance layer so the driver-version parser cannot quietly match it.
 
 ## [1.4] - 15 August 2026
 

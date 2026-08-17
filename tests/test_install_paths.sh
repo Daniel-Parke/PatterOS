@@ -128,12 +128,28 @@ has "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1" "applies the ReBAR workaro
 has "${UNIT}" "RADV_PERFTEST=nogttspill" "applies the recommended RADV tuning"
 
 # ---------------------------------------------------------------------------
+# 4b. --cpu --skip-build on that same AMD vulkan tree. Must warn, must not
+# reach for NVIDIA packages, and must KEEP the ReBAR workaround because the
+# binary being reused is still vulkan. Without that, a re-run rewrites the
+# live unit and silently halves throughput.
+# ---------------------------------------------------------------------------
+STUB_GPU=amd STUB_VRAM_MB=24576 STUB_BAR_MB=256 STUB_MESA=25.2.8 STUB_ICD=radv STUB_DISK_GB=500 \
+  run_case "AMD vulkan present, --cpu --skip-build" --cpu --skip-build --no-models --no-odysseus --skip-firewall --no-lact
+completes
+has "${OUT}" "though cpu is what this machine wants" "warns the existing backend is vulkan"
+hasnt "${SANDBOX}/calls.log" "ubuntu-drivers" "does not touch NVIDIA drivers"
+has "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1" "keeps the ReBAR workaround on the reused vulkan engine"
+has "${UNIT}" "RADV_PERFTEST=nogttspill" "keeps RADV tuning"
+
+# ---------------------------------------------------------------------------
 # 5. AMD, everything healthy. No workaround should be applied.
 # ---------------------------------------------------------------------------
 STUB_GPU=amd STUB_VRAM_MB=24576 STUB_BAR_MB=24576 STUB_MESA=25.2.8 STUB_ICD=radv STUB_DISK_GB=500 \
   run_case "AMD, Resizable BAR enabled" --no-models --no-odysseus --skip-firewall
 hasnt "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM" "no ReBAR workaround when it is not needed"
 hasnt "${OUT}" "older than the 25.2" "no Mesa warning on a current Mesa"
+has "${OUT}" "Graphics driver: Mesa 25.2.8" "reads Mesa from driverInfo, not the Overlay layer"
+hasnt "${OUT}" "Mesa Overlay" "does not call the instance layer the graphics driver"
 
 # ---------------------------------------------------------------------------
 # 6. AMD on an old Mesa and the unsupported driver. Both should be called out.
@@ -172,6 +188,18 @@ hasnt "${UNIT}" "-ngl 999" "does not claim the whole model fits on an 8 GB card"
 ngl="$(grep -oE -- '-ngl [0-9]+' "${UNIT}" | grep -oE '[0-9]+' | head -1)"
 if [[ -n "${ngl}" && "${ngl}" -gt 0 && "${ngl}" -lt 999 ]]; then ok "chose a sane layer count (${ngl})"
 else bad "chose a sane layer count" "got '${ngl}'"; fi
+
+# ---------------------------------------------------------------------------
+# 9b. AMD, no nvidia-smi. VRAM must still be read (glxinfo / sysfs), or
+# -ngl stays 999 and ReBAR detection never fires.
+# ---------------------------------------------------------------------------
+STUB_GPU=amd STUB_NVIDIA=missing STUB_VRAM_MB=8192 STUB_BAR_MB=256 STUB_DISK_GB=500 \
+  run_case "AMD 8 GB, VRAM without nvidia-smi, --full" --full --no-odysseus --skip-firewall
+completes
+has "${OUT}" "Engine built (vulkan)" "builds Vulkan without CUDA tools"
+has "${OUT}" "layers will run on the GPU" "computes a partial offload from glxinfo VRAM"
+hasnt "${UNIT}" "-ngl 999" "does not assume the whole model fits"
+has "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1" "ReBAR workaround still applies"
 
 # ---------------------------------------------------------------------------
 # 10. Not enough disk. Must refuse BEFORE downloading anything.

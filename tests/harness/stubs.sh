@@ -231,9 +231,19 @@ echo "GPU 0: NVIDIA GeForce RTX 3090 Ti"
 EOF
 
 _mk vulkaninfo <<'EOF'
+# Real vulkaninfo --summary lists instance layers before the device block.
+# "Mesa Overlay" must not be parsed as the driver version.
+echo "VK_LAYER_MESA_overlay       Mesa Overlay layer           1.4.303  version 1"
 echo "deviceName = Test GPU"
 echo "driverName = ${STUB_ICD:-radv}"
 echo "driverInfo = Mesa ${STUB_MESA:-25.2.8}"
+EOF
+
+_mk glxinfo <<'EOF'
+# AMD/Intel VRAM fallback when nvidia-smi is absent. The installer does not
+# ship mesa-utils, but a desktop may already have glxinfo; tests must not
+# pick up the host's real card.
+echo "Video memory: ${STUB_VRAM_MB:-24576}MB"
 EOF
 
 _mk df <<'EOF'
@@ -520,8 +530,13 @@ EOF
 # An older huggingface_hub ships only huggingface-cli. Remove `hf` entirely
 # rather than making it fail: the installer detects with `command -v hf`, so a
 # present-but-broken stub would be found and the fallback never tested.
+#
+# Deleting our stub is not enough on a developer machine: `hf` from
+# `pip install --user huggingface_hub` lives in ~/.local/bin, which is often
+# on PATH. Same trap as nvcc below — mask it from the inherited PATH.
 if [[ "${STUB_HAS_HF:-1}" != "1" ]]; then
   mv -f "${STUB_DIR}/hf" "${STUB_DIR}/huggingface-cli"
+  STUB_MASK="${STUB_MASK:-} hf"
 fi
 
 # Same reasoning for nvcc. The installer decides whether to attempt a CUDA
