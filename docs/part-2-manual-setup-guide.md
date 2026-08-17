@@ -35,7 +35,7 @@ Don’t worry about memorising these, they’re here so nothing in the steps fee
 | VRAM | The memory on your graphics card. It’s the single thing that decides how big a model you can run. Memory matters more than raw speed. |
 | `-ngl` | A setting that tells the engine how much of the model to put on the graphics card. More on the GPU = faster. |
 | CUDA | NVIDIA’s own fast way of using the graphics card. |
-| Vulkan | A universal way of using almost any graphics card (AMD, Intel, even NVIDIA). Simpler, works everywhere. |
+| Vulkan | A universal way of using almost any graphics card (AMD, Intel, even NVIDIA). Simpler, works everywhere. We have tested AMD; Intel is not tested by us. |
 | Router mode | A way of running the engine so it watches a whole folder of models and switches between them on the fly, no restart. |
 | API | A doorway programs use to talk to each other. Your server offers the same doorway the big AI companies do, which is why so many apps will just work with it. |
 | Odysseus | The web workspace you’ll chat with (the second piece above). |
@@ -87,7 +87,7 @@ sudo apt install -y build-essential cmake git curl wget \
 It’ll ask for your password (the one you log in with), type it and press Enter. You won’t see anything appear as you type the password; that’s normal. The download may take a few minutes the first time.
 
 > What did I just install?
-> In plain terms: the first lines give you a C/C++ toolchain (to build the engine), Git and download tools. `python3-venv` and `tmux` are for Odysseus later. The Vulkan packages let any AMD or Intel graphics card run models without a vendor toolkit. You don’t need to remember any of this, it’s just the toolbox.
+> In plain terms: the first lines give you a C/C++ toolchain (to build the engine), Git and download tools. `python3-venv` and `tmux` are for Odysseus later. The Vulkan packages let AMD (tested) and Intel (not tested by us) graphics cards run models without a vendor toolkit. You don’t need to remember any of this, it’s just the toolbox.
 
 ### Step 2, Find out which graphics card you have
 
@@ -101,11 +101,12 @@ Look at the maker’s name in the line it prints, then pick your path from the t
 
 | If the name says… | You’ll follow |
 |---|---|
-| NVIDIA (e.g. GeForce, RTX) | Path A, NVIDIA (the fastest option) |
-| AMD (e.g. Radeon RX) or Intel (Arc / built-in) | Path B, Vulkan (works on anything) |
-| Nothing useful, or you just want it working | Path C, CPU only |
+| NVIDIA (e.g. GeForce, RTX) | Path A, NVIDIA (the fastest option). Tested by us. |
+| AMD (e.g. Radeon RX) | Path B, Vulkan. Tested by us. |
+| Intel (Arc / built-in) | Path B, Vulkan. Not tested by us. |
+| Nothing useful, or you just want it working | Path C, CPU only. Tested by us. |
 
-From here on, just follow your one path and skip the other two. AMD and Intel share Path B because Vulkan is simpler than each vendor’s own toolkit and works well. NVIDIA could use Vulkan too, but its own CUDA is faster, so NVIDIA gets its own path.
+From here on, just follow your one path and skip the other two. AMD and Intel share Path B because Vulkan is simpler than each vendor’s own toolkit. We have run Path B on AMD. We have not run it on Intel: if your Intel card does not work, Path C (`--cpu` in the installer) still will, and an issue at the repository is welcome. NVIDIA could use Vulkan too, but its own CUDA is faster, so NVIDIA gets its own path.
 
 > No graphics card? That’s fine.
 > Path C runs everything on your processor instead. It’s slower, but it genuinely works, and a slow answer beats no answer. You can always add a card later and switch to Path A or B.
@@ -134,7 +135,9 @@ You should see a table listing your card and its memory. If you do, the driver i
 
 Path B, AMD or Intel (Vulkan)
 
-Good news: the driver is already built into Linux, and Step 1 already installed the Vulkan libraries. You just need to confirm your card is visible:
+Good news: the driver is already built into Linux, and Step 1 already installed the Vulkan libraries. You just need to confirm your card is visible.
+
+Intel Arc and Intel built-in graphics take this same path. We have not tested them. If `vulkaninfo` does not list your card, or the engine later fails to use it, follow Path C instead and tell us what happened.
 
 ```bash
 vulkaninfo --summary | grep deviceName

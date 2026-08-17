@@ -370,7 +370,12 @@ NV_BEFORE="n/a"; [[ "${VENDOR}" == "nvidia" ]] && NV_BEFORE="$(nvidia_state)"
 case "${VENDOR}" in
   nvidia) info "Found an NVIDIA GPU  → Path A (CUDA, fastest)   [driver: ${NV_BEFORE}]";;
   amd)    info "Found an AMD GPU    → Path B (Vulkan, universal)";;
-  intel)  info "Found an Intel GPU  → Path B (Vulkan, universal)";;
+  intel)
+    info "Found an Intel GPU  → Path B (Vulkan, universal)"
+    warn "Intel graphics is not tested by us. The installer still takes the Vulkan path, the same as AMD."
+    info "If it does not work, re-run with --cpu to use the processor instead, and please open an issue:"
+    info "https://github.com/Daniel-Parke/PatterOS/issues"
+    ;;
   cpu)    info "No GPU detected (or --cpu) → Path C (CPU only). 1 tok/s beats 0.";;
 esac
 

@@ -9,9 +9,14 @@ changed on their machine and why it matters to them.
 ## [Unreleased]
 
 Found while building out the test suite for the installer and then running it
-for real, twice, on an RTX 3090 Ti, and then again on an RX 7900 XTX. Every fix
-below shares a shape: the script reported success while quietly doing something
-other than what it said.
+for real, twice, on an RTX 3090 Ti, then on an RX 7900 XTX, then again on the
+same 3090 Ti after the AMD fixes (commit e472e01). NVIDIA Path A, GPU offload,
+and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
+
+### Removed
+
+- The 15 MB `.tools/shellcheck` binary that had been committed. CI already
+  uses the official `koalaman/shellcheck-alpine` images.
 
 ### Fixed
 
@@ -122,12 +127,18 @@ other than what it said.
   skip-phases dialogues, the edited-service-file question and the offer to
   reboot), every command-line flag and environment override, and every
   uninstaller flag including `--dry-run`, `--all` and the deletion guard rails.
-  With the existing hardware matrix that is 459 assertions in the stubbed
-  suites, plus the uninstaller reversal checks that still run only in a
-  disposable container.
+  With the existing hardware matrix that is 485 assertions in the stubbed
+  suites (14 docs, 8 unit preservation, 77 hardware paths, 169 flags, 72
+  interactive, 145 uninstaller), plus the uninstaller reversal checks that
+  still run only in a disposable container.
 
 ### Changed
 
+- **Intel graphics is documented as untested.** NVIDIA, AMD, and `--cpu` are
+  the tested paths. The installer still takes the Vulkan path on Intel Arc and
+  Intel iGPUs, the same as AMD, and now says so with a warning and `--cpu` as
+  the escape hatch. The README hardware table no longer lists Intel as a bare
+  "Yes".
 - The closing summary no longer suggests a command that does not work yet. `hf`
   is installed into `~/.local/bin`, which Mint and Ubuntu add to `PATH` from
   `~/.profile` at login, so "Add a model: hf download ..." fails in the very

@@ -122,6 +122,25 @@ else
   ok "every model in the download list is q4-class"
 fi
 
+# --- 10. Intel is labelled untested in the three places a user looks first --
+# NVIDIA and AMD are tested. Intel still takes the Vulkan path, but claiming
+# "Yes" in the hardware table made that look like a supported configuration.
+README="${ROOT}/README.md"
+for pair in "README:${README}" "guide:${GUIDE}" "installer:${INSTALL}"; do
+  name="${pair%%:*}"
+  file="${pair##*:}"
+  if grep -qi 'intel' "${file}" && grep -qiE 'not tested by us|untested by us' "${file}"; then
+    ok "${name} says Intel is untested"
+  else
+    bad "${name} does not say Intel is untested"
+  fi
+done
+if grep -E '\*\*Intel[^*]*\*\*[[:space:]]*\|[[:space:]]*Yes([[:space:]]|\|)' "${README}" >/dev/null; then
+  bad "README table lists Intel as a bare Yes"
+else
+  ok "README table does not list Intel as Yes"
+fi
+
 echo
 printf '%d passed, %d failed\n' "${PASS}" "${FAIL}"
 [[ "${FAIL}" -eq 0 ]]

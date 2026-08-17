@@ -126,7 +126,7 @@ The engine is the program that loads the weights and does the maths, and the goo
 
 | Engine | Built for | One-line character |
 |---|---|---|
-| `llama.cpp` | People who want to own every knob | The engine this series builds on. Runs everywhere (CUDA, Vulkan, CPU, Mac), GGUF native, router mode, zero magic. The community's workhorse. |
+| `llama.cpp` | People who want to own every knob | The engine this series builds on. Runs everywhere (CUDA, Vulkan, CPU, Mac), GGUF native, router mode, zero magic. The community's workhorse. PatterOS has tested CUDA on NVIDIA and Vulkan on AMD; Intel Vulkan is not tested by us. |
 | `Ollama` | People who want it working in five minutes | A friendly wrapper around the same ideas: one command pulls and serves a model. Brilliant for starting; less control when you want it. |
 | `vLLM` | Serving many users at once | Datacentre-grade throughput on big GPUs. The right tool when one rig serves a whole team or product, overkill for a desk. |
 | `LM Studio` | People who'd rather not see a terminal | A polished desktop app: browse, download, chat, serve an API, all by clicking. Closed source but free, and a lovely on-ramp. |

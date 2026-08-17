@@ -96,6 +96,7 @@ has "${UNIT}" "--models-max 1" "unit sets --models-max 1"
 has "${UNIT}" "-ngl 999" "whole model on the GPU when it fits"
 has "${UNIT}" "--port 8020" "correct port"
 has "${UNIT}" "127.0.0.1" "binds to localhost only"
+hasnt "${OUT}" "Intel graphics is not tested by us" "does not print the Intel untested warning"
 
 # ---------------------------------------------------------------------------
 # 2. NVIDIA, driver/library mismatch. Must NOT reinstall, must ask for a reboot.
@@ -150,6 +151,7 @@ hasnt "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM" "no ReBAR workaround when 
 hasnt "${OUT}" "older than the 25.2" "no Mesa warning on a current Mesa"
 has "${OUT}" "Graphics driver: Mesa 25.2.8" "reads Mesa from driverInfo, not the Overlay layer"
 hasnt "${OUT}" "Mesa Overlay" "does not call the instance layer the graphics driver"
+hasnt "${OUT}" "Intel graphics is not tested by us" "does not print the Intel untested warning"
 
 # ---------------------------------------------------------------------------
 # 6. AMD on an old Mesa and the unsupported driver. Both should be called out.
@@ -160,11 +162,13 @@ has "${OUT}" "older than the 25.2" "warns about Mesa below 25.2"
 has "${OUT}" "AMDVLK" "warns that AMDVLK is in use instead of RADV"
 
 # ---------------------------------------------------------------------------
-# 7. Intel. Vulkan, no vendor toolkit.
+# 7. Intel. Vulkan, no vendor toolkit. Honesty: this path is untested.
 # ---------------------------------------------------------------------------
 STUB_GPU=intel STUB_DISK_GB=500 \
   run_case "Intel Arc" --no-models --no-odysseus --skip-firewall
 has "${OUT}" "Engine built (vulkan)" "builds Vulkan on Intel"
+has "${OUT}" "Intel graphics is not tested by us" "warns that Intel is untested"
+has "${OUT}" "--cpu" "points at --cpu as the escape hatch"
 
 # ---------------------------------------------------------------------------
 # 8. CPU only. THE REGRESSION THAT MATTERS: --models-max must be 1, not 0.

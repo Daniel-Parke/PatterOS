@@ -41,11 +41,11 @@ Probably. This is the short version:
 
 | What you have | Will it work? | What to expect |
 |---|---|---|
-| **NVIDIA card** | Yes, best supported | The fastest option |
-| **AMD card** | Yes | Uses Vulkan, no vendor toolkit needed |
-| **Intel Arc card** | Yes | Uses Vulkan. Not tested by us, treat as experimental |
-| **Built-in graphics only** | Yes | Smaller models, slower |
-| **No graphics card at all** | Yes | Runs on the processor. Slower, but it genuinely works |
+| **NVIDIA card** | Yes, tested by us | The fastest option. CUDA. |
+| **AMD card** | Yes, tested by us | Uses Vulkan, no vendor toolkit needed |
+| **Intel Arc / Intel iGPU** | Untested by us | The installer still takes the Vulkan path, same as AMD. If it fails, `--cpu` runs on the processor, and an issue report is welcome |
+| **Built-in graphics only** | Yes | Smaller models, slower. Intel built-in graphics is untested; see the Intel row |
+| **No graphics card at all** | Yes, tested by us | Runs on the processor. Slower, but it genuinely works |
 
 **You also need:** Linux Mint 22 or Ubuntu 24.04, an internet connection, and
 about 20 GB of free disk space.
