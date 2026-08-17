@@ -93,7 +93,9 @@ jobs:
       - name: Dependencies
         # bsdutils provides `script`, which the interactive suite uses to drive
         # /dev/tty prompts through a pseudo-terminal.
-        run: apt-get update -qq && apt-get install -y -qq git ca-certificates systemd bsdutils
+        # sudo: as_user() in both scripts. python3: Odysseus setup and pip.
+        # adduser: useradd for the probe account the stub suites create.
+        run: apt-get update -qq && apt-get install -y -qq git ca-certificates systemd bsdutils sudo python3 adduser
       - uses: actions/checkout@v4
       - name: A hand-edited service file survives a re-run
         run: bash tests/test_unit_preservation.sh

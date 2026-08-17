@@ -60,10 +60,22 @@ cat > /etc/systemd/system/odysseus.service <<'EOF'
 ExecStart=/x/python -m uvicorn app:app --host 127.0.0.1 --port 9200
 EOF
 out="$(SUDO_USER="${U}" bash "${UNINSTALL}" --dry-run 2>&1)"
-if grep -q '9100/9200' <<<"${out}"; then ok "recovers custom ports from the unit files"
-else bad "recovers custom ports from the unit files"; fi
-if grep -q '8020/7000' <<<"${out}"; then bad "does not fall back to the default ports"
-else ok "does not fall back to the default ports"; fi
+# The plan names the ports read from the units. That is the proof they were
+# recovered: CI's ubuntu container has no ufw, so the firewall step never
+# prints them, and looking for the old "9100/9200" slash form failed there
+# even though read_port had the right numbers.
+if grep -q 'LAN ports from the installed units: 9100 and 9200' <<<"${out}"; then
+  ok "recovers custom ports from the unit files"
+else
+  bad "recovers custom ports from the unit files"
+  printf '         expected the plan to name 9100 and 9200\n'
+  grep -E 'Firewall|LAN ports' <<<"${out}" | sed 's/^/         /'
+fi
+if grep -q 'LAN ports from the installed units: 8020 and 7000' <<<"${out}"; then
+  bad "does not fall back to the default ports"
+else
+  ok "does not fall back to the default ports"
+fi
 rm -f /etc/systemd/system/llama.service /etc/systemd/system/odysseus.service
 
 # --- 3a. groups PatterOS added are removed ---------------------------------

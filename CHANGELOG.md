@@ -20,6 +20,12 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
 
 ### Fixed
 
+- **CI's uninstaller reversal test failed on every push after the firewall
+  honesty change.** It grepped dry-run output for `9100/9200`. After the
+  uninstaller only reported LAN rules that actually existed, a container
+  without `ufw` never printed those ports even though it had read them from
+  the units. The plan now names the ports recovered from the installed
+  services, so the recovery is visible with or without `ufw`.
 - **AMD VRAM was invisible unless `mesa-utils` happened to be installed.**
   `vram_gb()` asked `nvidia-smi`, then `glxinfo`. `glxinfo` comes from
   `mesa-utils`, which is not in the base package list, so a machine that only
@@ -127,9 +133,9 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
   skip-phases dialogues, the edited-service-file question and the offer to
   reboot), every command-line flag and environment override, and every
   uninstaller flag including `--dry-run`, `--all` and the deletion guard rails.
-  With the existing hardware matrix that is 485 assertions in the stubbed
+  With the existing hardware matrix that is 486 assertions in the stubbed
   suites (14 docs, 8 unit preservation, 77 hardware paths, 169 flags, 72
-  interactive, 145 uninstaller), plus the uninstaller reversal checks that
+  interactive, 146 uninstaller), plus the uninstaller reversal checks that
   still run only in a disposable container.
 
 ### Changed

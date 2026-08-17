@@ -283,6 +283,7 @@ has "${OUT}" "SSH stays reachable" "reassures the user about SSH"
 # ---------------------------------------------------------------------------
 SEED_PORT_LLAMA=9100 SEED_PORT_ODY=9200 STUB_UFW_RULES="9100 9200 8020" \
   run_case "custom ports are read back from the units" -y
+has "${OUT}" "LAN ports from the installed units: 9100 and 9200" "plan names the ports read from the units"
 has_re "${CALLS}" '^ufw delete allow 9100' "removes the rule for the port actually used"
 has_re "${CALLS}" '^ufw delete allow 9200' "same for the Odysseus port"
 hasnt_re "${CALLS}" '^ufw delete allow 8020' "leaves port 8020 alone, since this install never used it"

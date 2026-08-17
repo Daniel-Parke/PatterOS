@@ -214,6 +214,7 @@ fi
 echo "  Packages:  $([[ ${DO_PKGS}    == yes ]] && echo "purge the build/Vulkan extras PatterOS installed" || echo "keep")"
 echo "  Drivers:   $([[ ${DO_DRIVERS} == yes ]] && echo "purge the GPU driver/CUDA packages PatterOS installed (reboot after)" || echo "keep")"
 echo "  Firewall:  $([[ ${DO_FW}      == yes ]] && echo "disable ufw" || echo "leave as-is")"
+echo "             LAN ports from the installed units: ${PORT_LLAMA} and ${PORT_ODY}"
 echo "  LACT:      $([[ ${DO_LACT}    == yes ]] && echo "remove + disable lactd" || echo "leave as-is")"
 echo
 if [[ "${YES}" != "yes" && "${DRY}" != "yes" ]]; then
