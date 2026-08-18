@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  PatterOS · Local AI Budget Build · Part 2 companion installer
-#  install_local_ai.sh  (v1.4)
+#  install_local_ai.sh  (v1.5)
 #
 #  Automates EXACTLY what the Manual Setup Guide does, for people who would
 #  rather run a script than type the steps by hand:
@@ -117,15 +117,22 @@ ODY_COMMIT="${ODY_COMMIT:-cf4e240ad1622da6a904f496b19d656a2b9c6393}"
 # not, and q4 is what makes these fit on a real budget card. We never download
 # full-precision weights.
 #
-# These are the QAT (quantisation-aware training) builds. Google trains these
-# with the quantisation in mind rather than compressing afterwards, and they are
-# 0.6 to 1.6 GB smaller per model than the standard builds at the same
-# UD-Q4_K_XL level, which matters on the 512 GB drive in the Part 1 build. They
-# are also the builds used for this project's own comparison tests.
-# Every repo below was checked on 15 August 2026: all four resolve, all are
-# Apache 2.0 and ungated, and each contains exactly ONE file matching the glob.
+# Gemma entries are the QAT (quantisation-aware training) builds. Google trains
+# these with the quantisation in mind rather than compressing afterwards, and
+# they are 0.6 to 1.6 GB smaller per model than the standard builds at the same
+# UD-Q4_K_XL level, which matters on the 512 GB drive in the Part 1 build.
+#
+# Qwen 3.8 27B entries are the Unsloth UD-Q4_K_XL and AtomicChat AD-Q4_K_M
+# builds. Both are q4-class dense 27B files for 24 GB cards. A smaller
+# AD-IQ3_XXS exists for 16 GB cards; it is documented in the guide and is not
+# downloaded here (this list stays q4-only).
+# Every repo below was checked on 18 August 2026: all six resolve, all are
+# ungated, and each contains exactly ONE file matching the glob. Gemma and
+# Unsloth Qwen3.8 cards are Apache 2.0. AtomicChat did not stamp a licence
+# field; it is an ungated quant of Apache 2.0 Qwen/Qwen3.8-27B.
 # Watch the casing: E2B and E4B are capitals, and 12B and 31B are capital B in
-# the QAT repos (the non-QAT 12b repo uses a lowercase b).
+# the QAT repos (the non-QAT 12b repo uses a lowercase b). Qwen3.8 uses a
+# dotted 3.8 in both the repo and the filename.
 EXPRESS_MODELS=(
   "unsloth/gemma-4-E2B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|2.7"    # tiny, runs anywhere
   "unsloth/gemma-4-E4B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|4.3"    # small but capable
@@ -133,6 +140,8 @@ EXPRESS_MODELS=(
 FULL_MODELS=(
   "unsloth/gemma-4-12B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|6.8"    # strong mid-size all-rounder
   "unsloth/gemma-4-31B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|17.3"   # top quality on a 24 GB card
+  "unsloth/Qwen3.8-27B-GGUF|*UD-Q4_K_XL*.gguf|16.7"         # Qwen 3.8 Unsloth UD Q4
+  "AtomicChat/Qwen3.8-27B-GGUF|*AD-Q4_K_M*.gguf|15.9"       # Qwen 3.8 AtomicChat AD Q4
 )
 
 # ----- args -----------------------------------------------------------------
@@ -183,7 +192,7 @@ ODY_DIR="${USER_HOME}/odysseus"
 echo -e "${C}${B}"
 echo "  ============================================================"
 echo "     PatterOS  ·  Local AI Budget Build"
-echo "     Part 2 companion installer  ·  v1.4"
+echo "     Part 2 companion installer  ·  v1.5"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo

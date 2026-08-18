@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  PatterOS · Local AI Budget Build, Part 2 uninstaller / reset
-#  uninstall_local_ai.sh  (v1.4)
+#  uninstall_local_ai.sh  (v1.5)
 #
 #  The exact inverse of install_local_ai.sh. Use it to wipe a rig back to a
 #  clean state between test runs, so a fresh `install_local_ai.sh` starts clean.
@@ -193,7 +193,7 @@ safe_rm(){
 echo -e "${C}${B}"
 echo "  ============================================================"
 echo "     PatterOS  ·  Local AI Budget Build"
-echo "     Part 2 uninstaller / reset  ·  v1.4"
+echo "     Part 2 uninstaller / reset  ·  v1.5"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo

@@ -8,6 +8,11 @@ changed on their machine and why it matters to them.
 
 ## [Unreleased]
 
+### Added
+
+- `--full` now also downloads Qwen 3.8 27B Unsloth UD-Q4_K_XL and
+  AtomicChat AD-Q4_K_M. The 16 GB-card IQ3 is documented, not fetched.
+
 Found while building out the test suite for the installer and then running it
 for real, twice, on an RTX 3090 Ti, then on an RX 7900 XTX, then again on the
 same 3090 Ti after the AMD fixes (commit e472e01). NVIDIA Path A, GPU offload,

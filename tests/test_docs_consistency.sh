@@ -95,7 +95,7 @@ mismatch=""
 while IFS= read -r repo; do
   [[ -n "${repo}" ]] || continue
   grep -q "${repo}" "${GUIDE}" || mismatch="${mismatch} ${repo}"
-done < <(grep -oE 'unsloth/[A-Za-z0-9._-]+' "${INSTALL}" | sort -u)
+done < <(grep -oE '(unsloth|AtomicChat)/[A-Za-z0-9._-]+' "${INSTALL}" | sort -u)
 if [[ -z "${mismatch}" ]]; then ok "every model in the script is named in the guide"
 else bad "models in the script but not the guide:${mismatch}"; fi
 

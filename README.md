@@ -57,8 +57,8 @@ that really decides things. A model either fits in memory or it does not.
 |---|---|
 | None (processor only) | Gemma 4 E2B, 2.7 GB |
 | 8 GB | E2B and E4B fully; 12B partly, and PatterOS sets that up for you |
-| 16 GB | Up to Gemma 4 12B, 6.8 GB |
-| 24 GB | Everything, including Gemma 4 31B, 17.3 GB |
+| 16 GB | Up to Gemma 4 12B, 6.8 GB. Qwen 3.8 27B only as AD-IQ3_XXS (~11 GB), not the Q4s |
+| 24 GB | Everything, including Gemma 4 31B (17.3 GB) and Qwen 3.8 27B Q4s (~16–17 GB) |
 
 Not built a machine yet? Part 1 below has a full parts list from about £484.
 

@@ -180,6 +180,9 @@ run_case "--full model tier" --full --no-odysseus --skip-firewall
 exits 0
 has "${OUT}" "12B" "includes the 12B model"
 has "${OUT}" "31B" "includes the 31B model"
+has "${OUT}" "unsloth/Qwen3.8-27B-GGUF" "includes Unsloth Qwen3.8 UD"
+has "${OUT}" "AtomicChat/Qwen3.8-27B-GGUF" "includes AtomicChat Qwen3.8 AD"
+hasnt "${OUT}" "IQ3_XXS" "does not auto-download the 16 GB IQ3"
 
 # ---------------------------------------------------------------------------
 # Environment overrides.

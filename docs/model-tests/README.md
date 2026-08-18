@@ -51,12 +51,13 @@ Checked against first-party sources on 15 August 2026:
   Quantisation choice for this architecture is limited, so a poor result here
   may say more about the conversion than the model. The 4B version, which NVIDIA
   publishes as an official GGUF, is a different and much happier story.
-- **Note the licence differences.** Gemma 4 is Apache 2.0. Qwen3.6 is Apache
-  2.0. The NVIDIA Nemotron Open Model License is permissive and allows
+- **Note the licence differences.** Gemma 4 is Apache 2.0. Qwen3.6 and Qwen3.8
+  are Apache 2.0. The NVIDIA Nemotron Open Model License is permissive and allows
   commercial use, but it is a bespoke licence with an attribution requirement
   and an indemnity clause, not Apache.
-- **Only Gemma 4 ships in the installer.** The others were run for comparison.
-  If you want to try them, drop the GGUF into `~/models` and run
+- **The installer ships Gemma 4 QAT plus, on `--full`, Qwen 3.8 27B UD and AD
+  Q4.** The hydrogen runs above still use Qwen3.6. If you want to try a file
+  the installer does not fetch, drop the GGUF into `~/models` and run
   `curl 'http://localhost:8020/v1/models?reload=1'`.
 - **A bigger model is not automatically a better answer**, and a lower
   quantisation of a bigger model is not automatically better than a higher
