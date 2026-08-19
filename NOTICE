@@ -35,6 +35,16 @@ Gemma 4 model weights
     Google publishes a separate Gemma Prohibited Use Policy, which is a policy
     rather than a condition of the Apache 2.0 grant for Gemma 4.
 
+Qwen 3.8 27B model weights
+    https://huggingface.co/unsloth  and  https://huggingface.co/AtomicChat
+    Apache License 2.0 for the Unsloth build, which states it on its model
+    card. Downloaded from Hugging Face at the user's choice, on --full only.
+    The AtomicChat repository states no licence at all. It is an ungated
+    quantisation of Qwen/Qwen3.8-27B, which is Apache 2.0, so the grant is
+    inherited rather than declared. We have not been able to confirm it from
+    a first-party statement by that publisher, and we would rather say so
+    than print a licence we cannot read.
+
 Hugging Face Hub client
     https://github.com/huggingface/huggingface_hub
     Apache License 2.0. Installed for the user to download models.

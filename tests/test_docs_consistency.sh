@@ -28,6 +28,21 @@ for f in "${INSTALL}" "${UNINSTALL}" "${GUIDE}"; do
   [[ -r "${f}" ]] || { echo "cannot read ${f}"; exit 1; }
 done
 
+# The download list, read structurally: the entries between EXPRESS_MODELS=( or
+# FULL_MODELS=( and the closing bracket, one "repo|glob|size" per line.
+#
+# The checks below used to find models with a publisher-name regex instead. That
+# has to be widened by hand every time someone new is added, and the one time it
+# was missed only half the list was still covered by the q4-only rule. Reading
+# the arrays themselves cannot go stale, and it also stops a repository merely
+# mentioned in a comment from being treated as something we download.
+model_specs(){
+  sed -n '/^EXPRESS_MODELS=(/,/^)/p;/^FULL_MODELS=(/,/^)/p' "${INSTALL}" \
+    | grep -oE '"[^"|]+\|[^"|]+\|[^"|]+"' | tr -d '"'
+}
+model_repos(){      model_specs | cut -d'|' -f1 | sort -u; }
+model_publishers(){ model_repos  | cut -d'/' -f1 | sort -u; }
+
 echo "documentation and scripts agree"
 
 # --- 1. --models-max 0 must not reappear, anywhere -------------------------
@@ -91,13 +106,19 @@ done
 # --- 7. models agree --------------------------------------------------------
 # Every model the script downloads must appear in the guide, so a reader
 # following either route ends up with the same thing.
-mismatch=""
-while IFS= read -r repo; do
-  [[ -n "${repo}" ]] || continue
-  grep -q "${repo}" "${GUIDE}" || mismatch="${mismatch} ${repo}"
-done < <(grep -oE '(unsloth|AtomicChat)/[A-Za-z0-9._-]+' "${INSTALL}" | sort -u)
-if [[ -z "${mismatch}" ]]; then ok "every model in the script is named in the guide"
-else bad "models in the script but not the guide:${mismatch}"; fi
+# Process substitution, not a pipe: a piped `while read` runs in a subshell and
+# the accumulated result would be discarded.
+if [[ -z "$(model_repos)" ]]; then
+  bad "could not read the model list out of the installer"
+else
+  mismatch=""
+  while IFS= read -r repo; do
+    [[ -n "${repo}" ]] || continue
+    grep -q "${repo}" "${GUIDE}" || mismatch="${mismatch} ${repo}"
+  done < <(model_repos)
+  if [[ -z "${mismatch}" ]]; then ok "every model in the script is named in the guide"
+  else bad "models in the script but not the guide:${mismatch}"; fi
+fi
 
 # --- 8. LACT version agrees -------------------------------------------------
 # The guide sat on 0.9.0 for a release after the script moved to 0.10.0, so
@@ -116,10 +137,29 @@ fi
 # --- 9. q4 only -------------------------------------------------------------
 # A model either fits in memory or it does not. Full-precision weights are never
 # downloaded, so no BF16/F16/F32 quant may appear in the model list.
-if grep -oE 'unsloth/[A-Za-z0-9._-]+\|[^|]*\|' "${INSTALL}" | grep -qiE 'bf16|f16|f32'; then
+if model_specs | grep -qiE 'bf16|f16|f32'; then
   bad "a full-precision model has crept into the download list"
 else
   ok "every model in the download list is q4-class"
+fi
+
+# --- 9b. NOTICE names every publisher we download from ----------------------
+# NOTICE is where this project records what it downloads and under what licence.
+# It was written by hand and stayed accurate only for as long as someone
+# remembered, which lasted exactly until the model list grew a second
+# publisher. CONTRIBUTING's rule about never claiming an unchecked licence is
+# worth more as a test than as a paragraph.
+NOTICE_FILE="${ROOT}/NOTICE"
+if [[ ! -r "${NOTICE_FILE}" ]]; then
+  bad "cannot read NOTICE"
+else
+  missing=""
+  while IFS= read -r pub; do
+    [[ -n "${pub}" ]] || continue
+    grep -qi "${pub}" "${NOTICE_FILE}" || missing="${missing} ${pub}"
+  done < <(model_publishers)
+  if [[ -z "${missing}" ]]; then ok "NOTICE names every publisher in the download list"
+  else bad "publishers we download from but do not credit in NOTICE:${missing}"; fi
 fi
 
 # --- 10. Intel is labelled untested in the three places a user looks first --

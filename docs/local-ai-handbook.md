@@ -310,7 +310,7 @@ Memory figures are the roughly-4-bit files you'd realistically download. Ratings
 | Gemma 4 26B-A4B | MoE: 26B pool, 4B active | 15 GB | 24 GB cards; great on CPU offload | 4/5. Near-31B quality at small-model speed. The MoE lesson made flesh. |
 | Gemma 4 31B | The dense flagship of the family | 18 GB (QAT) | 24 GB cards | 4.5/5. Top quality that fits the Part 1 flagship rigs. Reports, reasoning, long documents. |
 | Qwen3.8 27B | Dense all-rounder, Unsloth UD-Q4 or AtomicChat AD-Q4 | ~16 GB | 24 GB cards | 4.5/5. The current Qwen 27B pick. Ships on `--full`. On 16 GB cards use AtomicChat AD-IQ3_XXS (~11 GB), not the Q4s. |
-| Qwen3.6 27B-class | Previous 27B dense Qwen, still a strong coder | ~16 GB | 24 GB cards | 4/5. Superseded in the installer by 3.8; still useful if you already have the file. |
+| Qwen3.6 27B-class | Previous 27B dense Qwen, still a strong coder | ~16 GB | 24 GB cards | 4/5. Superseded by 3.8, which is the one the installer fetches. Still worth running if you already have the file. |
 | Qwen3.6 35B-A3B | MoE with vision, ~262K context | ~20 GB | 24 GB and unified boxes | 4/5. Agentic and coding workhorse with tiny active size; flies where bandwidth is scarce. |
 | Phi-4-mini | 3.8B with a 128K context | ~2.5 GB | CPU-only machines, laptops, edge | 3.5/5. The no-GPU entry point. Long documents on modest hardware. |
 | Mistral Small 4 | Efficient European mid-size, Apache 2.0 | ~14 GB | 24 GB cards | 4/5. Clean licence, strong general quality, business-friendly deployments. |

@@ -174,7 +174,31 @@ has "${OUT}" "LACT is already installed" "recognises an existing install"
 hasnt_re "${CALLS}" '^wget.*lact' "does not download it again"
 
 # ---------------------------------------------------------------------------
-# --full picks the larger pair of models.
+# --no-models must actually download nothing.
+#
+# Every other case in this file passes --no-models to keep itself quick, and not
+# one of them ever checked that it worked. It did not: the flag set a variable
+# that the tier calculation then overwrote, so anyone who asked for no models
+# got the express set anyway, about 7 GB they had explicitly declined. This
+# suite exists to catch a flag that parses and is then ignored, and it had that
+# exact bug sitting inside almost every case in it.
+# ---------------------------------------------------------------------------
+run_case "--no-models downloads nothing" --no-models --no-odysseus --skip-firewall
+exits 0
+has     "${OUT}"   "Skipping downloads" "says it is skipping the download"
+hasnt_re "${CALLS}" '^(hf|huggingface-cli) download' "runs no download command"
+hasnt   "${OUT}"   "model(s) downloaded" "does not report models it never fetched"
+
+# ---------------------------------------------------------------------------
+# --full asks for all six models AND every one of them verifies.
+#
+# Asking is not the same as arriving. The four `has` lines below match the
+# "Fetching ..." line, which is printed before the download is attempted, so on
+# their own they would pass against a tier where nothing landed at all. That is
+# not hypothetical: for one release the harness could not produce either Qwen
+# file and every run here reported two of six as failed, in silence, because
+# nothing looked at the count. The last three assertions are the ones that
+# would have caught it.
 # ---------------------------------------------------------------------------
 run_case "--full model tier" --full --no-odysseus --skip-firewall
 exits 0
@@ -183,6 +207,12 @@ has "${OUT}" "31B" "includes the 31B model"
 has "${OUT}" "unsloth/Qwen3.8-27B-GGUF" "includes Unsloth Qwen3.8 UD"
 has "${OUT}" "AtomicChat/Qwen3.8-27B-GGUF" "includes AtomicChat Qwen3.8 AD"
 hasnt "${OUT}" "IQ3_XXS" "does not auto-download the 16 GB IQ3"
+# `has`, not `has_re`: the helper greps a basic regex, where the brackets in
+# "model(s)" are literal. Under -E they would be a group and this would silently
+# stop matching the very string it exists to check.
+has   "${OUT}" "All 6 model(s) downloaded" "all six verify after downloading"
+hasnt "${OUT}" "may be incomplete"  "no model is reported as the wrong size"
+hasnt "${OUT}" "no file matching"   "every requested file is found afterwards"
 
 # ---------------------------------------------------------------------------
 # Environment overrides.

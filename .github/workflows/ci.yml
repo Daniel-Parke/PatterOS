@@ -35,7 +35,7 @@ jobs:
         run: |
           # Fail on anything, including info-level findings. The scripts are
           # currently clean, so the bar is "stays clean", not "gets no worse".
-          shellcheck --severity=style scripts/*.sh tests/*.sh
+          shellcheck --severity=style scripts/*.sh tests/*.sh tests/harness/*.sh
 
   syntax:
     name: bash syntax
@@ -43,7 +43,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Parse every script
-        run: for f in scripts/*.sh tests/*.sh; do echo "checking $f"; bash -n "$f"; done
+        run: for f in scripts/*.sh tests/*.sh tests/harness/*.sh; do echo "checking $f"; bash -n "$f"; done
       - name: Help output renders and exits 0
         run: |
           bash scripts/install_local_ai.sh --help > /tmp/i.txt

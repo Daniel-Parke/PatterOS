@@ -16,7 +16,7 @@ It does, by hand, exactly what our installer script does. If you’d rather not 
 
 > Before you dive in
 > Time. About 25–45 minutes of hands-on work, plus model-download time (that part is just waiting).
-> You need. A working Mint 22 / Ubuntu 24.04 desktop, an internet connection, and roughly 20 GB of free disk space.
+> You need. A working Mint 22 / Ubuntu 24.04 desktop, an internet connection, and roughly 20 GB of free disk space. That covers the small models this guide downloads. If you go on to fetch the 27B and 31B files as well, budget about 70 GB.
 > Comfort level. None assumed. If you can copy and paste, you can do this.
 
 > Prefer a script?

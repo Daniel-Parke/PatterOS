@@ -49,7 +49,7 @@ serious as a remote exploit.
 
 ## What PatterOS installs that you should know about
 
-PatterOS sets up other people's software. Two points worth reading before you
+PatterOS sets up other people's software. Three points worth reading before you
 run it:
 
 - **Odysseus** includes an AI agent that can run commands, read files and access
@@ -58,6 +58,13 @@ run it:
   expose it to the internet.
 - **llama.cpp** is built from source on your machine. The pinned tag is recorded
   in the installer so you can check it yourself.
+- **Model weights are not pinned the way the code is.** llama.cpp gets a tag and
+  Odysseus gets a commit. Models are asked for by repository and filename, so
+  what arrives is whatever that repository holds on the day you run the script.
+  The size check afterwards catches a download that was cut short. It does not
+  catch a file that changed. The repositories are named in the installer and in
+  [NOTICE](NOTICE), so you can look before you fetch, and you can always skip
+  the download entirely with `--no-models` and add your own files later.
 
 ## Supported versions
 

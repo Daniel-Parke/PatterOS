@@ -474,10 +474,18 @@ while [[ $# -gt 0 ]]; do
 done
 name="$(basename "${repo}" | sed 's/-GGUF$//')"
 mkdir -p "${dir}"
+# The quantisation comes from the glob we were handed, not from a fixed string.
+# This used to write -UD-Q4_K_XL no matter what was asked for, so any repo whose
+# file is named for a different quant could never be satisfied: the installer
+# looked for the file it requested, found the one we invented, and reported a
+# perfectly ordinary download as missing. Strip the wildcards, then the
+# directory part (sharded quants live in a subdirectory) and the extension.
+quant="${glob//\*/}"; quant="${quant##*/}"; quant="${quant%.gguf}"
+[[ -n "${quant}" ]] || quant="UD-Q4_K_XL"
 # Just over the installer's 100M "is this a real file" floor. It does not need
 # to be the true size: the `du` stub reports that separately, and writing
 # 17 GB of zeros per scenario would make this suite unusable.
-head -c 110000000 /dev/zero > "${dir}/${name}-UD-Q4_K_XL.gguf"
+head -c 110000000 /dev/zero > "${dir}/${name}-${quant}.gguf"
 exit 0
 EOF
 _mk huggingface-cli <<'EOF'
@@ -499,12 +507,22 @@ exit 0
 EOF
 _mk du <<'EOF'
 # Report the size the installer expects, so the size sanity check passes.
+# Sizes are the declared GB times 1024, because that is what the installer
+# divides by. The Qwen arms come first and match on the quantisation, not the
+# parameter count: both Qwen repos produce a Qwen3.8-27B file, and a future
+# Qwen3.8-31B would otherwise be claimed by the *31B* arm below.
+# The fallback is 0, not a plausible size. A model added without an arm here
+# then fails the installer's own size check loudly, which is how it should have
+# behaved the first time: a plausible-looking default hid two broken downloads
+# for an entire release.
 f="${2:-${1:-}}"
 if [[ -f "${f}" ]]; then
   case "${f}" in
+    *Qwen3.8*UD-Q4_K_XL*) echo -e "17101\t${f}";;
+    *Qwen3.8*AD-Q4_K_M*)  echo -e "16282\t${f}";;
     *E2B*) echo -e "2764\t${f}";; *E4B*) echo -e "4403\t${f}";;
     *12B*) echo -e "6963\t${f}";; *31B*) echo -e "17715\t${f}";;
-    *) echo -e "3072\t${f}";;
+    *) echo -e "0\t${f}";;
   esac
 else echo -e "0\t${f}"; fi
 EOF
@@ -533,7 +551,7 @@ EOF
 #
 # Deleting our stub is not enough on a developer machine: `hf` from
 # `pip install --user huggingface_hub` lives in ~/.local/bin, which is often
-# on PATH. Same trap as nvcc below — mask it from the inherited PATH.
+# on PATH. Same trap as nvcc below: mask it from the inherited PATH.
 if [[ "${STUB_HAS_HF:-1}" != "1" ]]; then
   mv -f "${STUB_DIR}/hf" "${STUB_DIR}/huggingface-cli"
   STUB_MASK="${STUB_MASK:-} hf"
