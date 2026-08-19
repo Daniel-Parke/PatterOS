@@ -16,7 +16,7 @@ It does, by hand, exactly what our installer script does. If you’d rather not 
 
 > Before you dive in
 > Time. About 25–45 minutes of hands-on work, plus model-download time (that part is just waiting).
-> You need. A working Mint 22 / Ubuntu 24.04 desktop, an internet connection, and roughly 20 GB of free disk space.
+> You need. A working Mint 22 / Ubuntu 24.04 desktop, an internet connection, and roughly 20 GB of free disk space. That covers the small models this guide downloads. If you go on to fetch the 27B and 31B files as well, budget about 70 GB.
 > Comfort level. None assumed. If you can copy and paste, you can do this.
 
 > Prefer a script?
@@ -220,22 +220,25 @@ Built one of the Part 1 configurations? Here’s what your card comfortably runs
 
 | Your card (from Part 1) | Good choices |
 |---|---|
-| RTX 3090 Ti or RX 7900 XTX (24 GB) | E2B, E4B, the 12B and even the 31B all fit on the card. Download any of them into `~/models` and switch between them live. |
+| RTX 3090 Ti or RX 7900 XTX (24 GB) | E2B, E4B, the 12B, the 31B, and the Qwen 3.8 27B Q4s all fit on the card. Download any of them into `~/models` and switch between them live. |
 | RTX 2070 Super (8 GB) | E2B and E4B run fully on the GPU. The 12B still works well using partial offload, see the callout in Step 6. |
 | No GPU (CPU only) | Start with E2B (E4B works if you’re patient). Your 64 GB of RAM is exactly what makes this possible. |
 
 > Bigger models, and what “UD-Q4_K_XL” means
-> Want more than one? Download others into the `same` folder and you’ll be able to switch between them live in Step 7. The rule of thumb: the model file should be a bit smaller than your VRAM. These are the four the installer offers, smallest first:
+> Want more than one? Download others into the `same` folder and you’ll be able to switch between them live in Step 7. The rule of thumb: the model file should be a bit smaller than your VRAM. These are the models the installer offers, smallest first:
 >
 > | Model | Repository | Size on disk |
 > |---|---|---|
 > | Gemma 4 E2B | `unsloth/gemma-4-E2B-it-qat-GGUF` | 2.7 GB |
 > | Gemma 4 E4B | `unsloth/gemma-4-E4B-it-qat-GGUF` | 4.3 GB |
 > | Gemma 4 12B | `unsloth/gemma-4-12B-it-qat-GGUF` | 6.8 GB |
+> | Qwen 3.8 27B AD | `AtomicChat/Qwen3.8-27B-GGUF` (`*AD-Q4_K_M*.gguf`) | 15.9 GB |
+> | Qwen 3.8 27B UD | `unsloth/Qwen3.8-27B-GGUF` (`*UD-Q4_K_XL*.gguf`) | 16.7 GB |
 > | Gemma 4 31B | `unsloth/gemma-4-31B-it-qat-GGUF` | 17.3 GB |
 >
 > Mind the capital letters in the repository names; Hugging Face is forgiving about them but your own file paths will not be.
-> That `UD-Q4_K_XL` in the name is the quantisation, how much the model has been compressed. It’s a well-balanced choice: much smaller than the original, with very little quality lost. You don’t need to think about it beyond picking files with that label.
+> That `UD-Q4_K_XL` or `AD-Q4_K_M` in the name is the quantisation, how much the model has been compressed. It’s a well-balanced choice: much smaller than the original, with very little quality lost. You don’t need to think about it beyond picking files with that label.
+> On a 16 GB card, Qwen 3.8 27B only fits as `Qwen3.8-27B-AD-IQ3_XXS.gguf` from the same AtomicChat repo. The installer will not fetch that file. After dropping any extra GGUF into `~/models`, tell the running server to rescan with `curl 'http://localhost:8020/v1/models?reload=1'`.
 
 Later, when you go exploring beyond Gemma: every model page on Hugging Face gives you the same three clues. The number in the name (`4B`, `12B`, `31B`…) is its size in “parameters”, bigger is smarter and hungrier. The file size listed next to each GGUF is roughly the memory it needs, so compare it to your VRAM. And models marked `-it` or `-instruct` are the ones tuned for conversation, that’s what you want for chat.
 

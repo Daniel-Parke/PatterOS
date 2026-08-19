@@ -48,7 +48,8 @@ Probably. This is the short version:
 | **No graphics card at all** | Yes, tested by us | Runs on the processor. Slower, but it genuinely works |
 
 **You also need:** Linux Mint 22 or Ubuntu 24.04, an internet connection, and
-about 20 GB of free disk space.
+about 20 GB of free disk space for the default set of models. `--full` fetches
+the bigger ones too and wants about 70 GB free.
 
 **More memory on your graphics card means bigger models.** That is the one spec
 that really decides things. A model either fits in memory or it does not.
@@ -57,8 +58,8 @@ that really decides things. A model either fits in memory or it does not.
 |---|---|
 | None (processor only) | Gemma 4 E2B, 2.7 GB |
 | 8 GB | E2B and E4B fully; 12B partly, and PatterOS sets that up for you |
-| 16 GB | Up to Gemma 4 12B, 6.8 GB |
-| 24 GB | Everything, including Gemma 4 31B, 17.3 GB |
+| 16 GB | Up to Gemma 4 12B, 6.8 GB. Qwen 3.8 27B only as AD-IQ3_XXS (~11 GB), not the Q4s |
+| 24 GB | Everything, including Gemma 4 31B (17.3 GB) and Qwen 3.8 27B Q4s (~16–17 GB) |
 
 Not built a machine yet? Part 1 below has a full parts list from about £484.
 
@@ -89,7 +90,7 @@ do before it does it. Everything is optional and everything can be undone.
 
 | Option | What it does |
 |---|---|
-| `--full` | Also download the bigger models. Needs a 24 GB card and the disk space |
+| `--full` | Also download the bigger models. Needs a 24 GB card and about 70 GB free |
 | `--no-models` | Set everything up, download nothing. Add models later |
 | `--no-odysseus` | Model server only, no web workspace |
 | `--cpu` | Ignore the graphics card and use the processor |
@@ -171,10 +172,18 @@ projects with their own licences:
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | MIT | Runs the models. Built from source, pinned to a tested version |
 | [Odysseus](https://github.com/odysseus-dev/odysseus) | AGPL-3.0 | The web workspace. Installed and run unmodified, pinned to a commit |
 | [LACT](https://github.com/ilya-zlobintsev/LACT) | MIT | Optional. Graphics card power and fan tuning |
-| [Gemma 4](https://huggingface.co/unsloth) | Apache 2.0 | The models, downloaded from Hugging Face |
+| [Gemma 4](https://huggingface.co/unsloth) | Apache 2.0 | The default models, downloaded from Hugging Face |
+| [Qwen 3.8 27B](https://huggingface.co/unsloth) | Apache 2.0, and one undeclared | Two more models, on `--full` only. See the note below |
 
 **A word about Odysseus.** It includes an AI agent that can run commands and read
 files. PatterOS keeps it on your machine only. Do not expose it to the internet.
+
+**A word about the Qwen licence.** `--full` fetches two builds of Qwen 3.8 27B.
+Unsloth's states Apache 2.0 on its model card. AtomicChat's states nothing. It is
+an ungated quantisation of Qwen/Qwen3.8-27B, which is Apache 2.0, so the grant
+should carry through, but we have not been able to confirm that from the
+publisher themselves. If you need a licence you can point at, use the Unsloth
+build. See [NOTICE](NOTICE).
 
 ---
 

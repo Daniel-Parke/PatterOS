@@ -55,8 +55,8 @@ body:
     id: version
     attributes:
       label: Which version of the script?
-      description: The line near the top that says v1.4, or the date you downloaded it
-      placeholder: v1.4
+      description: The line near the top that says v1.5, or the date you downloaded it
+      placeholder: v1.5
 
   - type: checkboxes
     id: checks

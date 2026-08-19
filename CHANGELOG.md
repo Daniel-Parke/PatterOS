@@ -8,15 +8,19 @@ changed on their machine and why it matters to them.
 
 ## [Unreleased]
 
+Nothing yet.
+
+## [1.5] - 19 August 2026
+
+The release where the installer finally got tested properly. Qwen 3.8 27B joins
+`--full`, three new test suites cover the prompts, the flags and the
+uninstaller, and almost everything else here was found by two real machines and
+by the tests themselves.
+
 Found while building out the test suite for the installer and then running it
 for real, twice, on an RTX 3090 Ti, then on an RX 7900 XTX, then again on the
 same 3090 Ti after the AMD fixes (commit e472e01). NVIDIA Path A, GPU offload,
 and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
-
-### Removed
-
-- The 15 MB `.tools/shellcheck` binary that had been committed. CI already
-  uses the official `koalaman/shellcheck-alpine` images.
 
 ### Fixed
 
@@ -31,7 +35,7 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
   `mesa-utils`, which is not in the base package list, so a machine that only
   has what this installer put on it has neither. Resizable BAR detection and
   the partial `-ngl` offload both use that number, so an AMD or Intel card
-  with ReBAR off and an 8 GB card asked to hold a 19 GB model both took the
+  with ReBAR off and an 8 GB card asked to hold an 18 GB model both took the
   `-ngl 999` path and skipped the workaround. The function now reads
   `/sys/class/drm/card*/device/mem_info_vram_total` when the two userland
   tools are missing.
@@ -51,7 +55,6 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
   the vulkan binary (`-ngl 999`). The card is now still detected under `--cpu`,
   and if the engine being reused is vulkan the workarounds are filled in before
   the unit is written.
-
 - **The workspace could not start at all, and the installer said it had.**
   Odysseus is pinned to a specific commit so that everyone installs the same
   code. That commit, the tip of upstream's `main`, annotates two helpers in
@@ -125,18 +128,51 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
   as being inside it, so the check that exists to catch the unexpected passed
   deletions at the top of the filesystem straight through. Both scripts now stop
   if the home directory is `/`.
+- **`--no-models` downloaded models.** The flag set one variable and the tier
+  calculation immediately overwrote it, so anyone who asked for a setup with no
+  models got the express pair anyway, about 7 GB they had explicitly declined.
+  It has been that way since the first release. Every other test in the flag
+  suite passes `--no-models` to keep itself quick, and not one of them had ever
+  checked that it worked, so the suite whose whole purpose is catching a flag
+  that parses and is then ignored had that exact bug sitting inside almost
+  every case in it. Fixed, and now tested.
+- **The test suite could not produce either of the new Qwen files, and passed
+  anyway.** The download stub was handed the filename pattern the installer
+  asked for and then ignored it, always writing the same quantisation into the
+  name, so the AtomicChat file could never exist to be found. The size stub had
+  no entry for either Qwen file, so the one that did arrive measured 3 GB
+  against an expected 16.7 and was called incomplete. Every `--full` run
+  reported two of six downloads as failed, on every push, and the suite stayed
+  green throughout because nothing looked at the count. The stubs now follow
+  the pattern they are given, both Qwen files have a size, and a `--full` run
+  is checked for all six arriving rather than merely being asked for. The
+  fallback size is now zero rather than a plausible three gigabytes, so the
+  next model added without one fails loudly instead of quietly.
+- **The "never full-precision weights" rule only covered one publisher.** The
+  check that enforces it read the model list with a pattern naming publishers
+  one by one, and the second publisher was never added to it, so half the list
+  sat outside the rule. It reads the list structurally now, whoever publishes
+  what is in it, and the same rewrite lets a new check confirm that everyone we
+  download from is credited in NOTICE. That one is worth more as a test than as
+  a good intention.
+- **A handbook row said Qwen3.6 had been "superseded in the installer".** It
+  never was in the installer. Qwen3.6 is a comparison model from the Part 3
+  tests, and the installer went from Gemma only to Gemma plus Qwen 3.8. The row
+  says that now, and still recommends the file to anyone who already has it.
 
 ### Added
 
+- `--full` now also downloads Qwen 3.8 27B Unsloth UD-Q4_K_XL and
+  AtomicChat AD-Q4_K_M. The 16 GB-card IQ3 is documented, not fetched.
 - Three new test suites covering ground that had none: every prompt a user sees
   driven through a pseudo-terminal (both confirmation gates, the Customise and
   skip-phases dialogues, the edited-service-file question and the offer to
   reboot), every command-line flag and environment override, and every
   uninstaller flag including `--dry-run`, `--all` and the deletion guard rails.
-  With the existing hardware matrix that is 486 assertions in the stubbed
-  suites (14 docs, 8 unit preservation, 77 hardware paths, 169 flags, 72
-  interactive, 146 uninstaller), plus the uninstaller reversal checks that
-  still run only in a disposable container.
+  With the existing hardware matrix that is 510 assertions across the six
+  stubbed suites, plus the uninstaller reversal checks that still run only in
+  a disposable container. One number rather than seven, because seven of them
+  went stale the first time anyone added a test.
 
 ### Changed
 
@@ -172,6 +208,45 @@ and `--cpu` still do what they say. AMD paths were not rewritten for this pass.
   hardware matrix also resets its scratch home, so running it twice in a row no
   longer produces different results. The vulkaninfo stub prepends the Mesa
   Overlay instance layer so the driver-version parser cannot quietly match it.
+- **The disk check runs before the install starts, not in the middle of it.**
+  `--full` is about 64 GB of models and wants roughly 70 GB free once you allow
+  for headroom. That was checked in phase 4, which meant a machine that could
+  never fit the tier still paid for a full system upgrade, a driver install and
+  a twenty-minute engine build before anyone mentioned the disk. It is asked
+  now before phase 1, while the menu that can fix it is still open, and asked
+  again before the download because the build in between takes space of its
+  own. The card is still measured later, where it can actually be read: on a
+  fresh machine none of the tools that report VRAM are installed yet.
+- **The published disk figure is per tier.** The README and the Part 2 guide
+  said about 20 GB, which was only ever true of the default models. They now
+  say 20 GB for those and about 70 GB for `--full`, and the `--full` flag says
+  it too.
+- NOTICE and the README's "What gets installed" table list the Qwen 3.8 weights
+  alongside Gemma 4, so what the licence table names matches what the script
+  downloads. Both record that Unsloth's build states Apache 2.0 and
+  AtomicChat's states no licence at all. AtomicChat's is an ungated
+  quantisation of Apache 2.0 Qwen/Qwen3.8-27B, so the grant should carry
+  through, but that is inherited rather than declared and we have not confirmed
+  it from the publisher. We would rather say so than print a licence we cannot
+  read.
+- SECURITY.md now says how model weights are fetched, which is not how the code
+  is fetched. llama.cpp gets a pinned tag and Odysseus a pinned commit. Models
+  are asked for by repository and filename, so what arrives is whatever that
+  repository holds on the day you run the script. The size check afterwards
+  catches a download that was cut short, not a file that changed.
+- Installer and uninstaller versions are matched again, at v1.5.
+- Stale sizes in the script comments corrected. The installer called the
+  largest `--full` model "~19 GB" where it works the number out as 18, the
+  hardware matrix called `--full` "26 GB of downloads" when it is about 64, and
+  two places described `~/models` as 174 GB, which was one machine's figure
+  rather than anyone else's. These scripts are commented for people who were
+  told to read a script before running it, so a stale number in one is a wrong
+  answer to a fair question.
+
+### Removed
+
+- The 15 MB `.tools/shellcheck` binary that had been committed. CI already
+  uses the official `koalaman/shellcheck-alpine` images.
 
 ## [1.4] - 15 August 2026
 
@@ -291,4 +366,5 @@ shipping, and two of them could cost you an evening.
 Companion release to Part 2 of the video series. Initial public installer and
 uninstaller.
 
+[1.5]: https://github.com/Daniel-Parke/PatterOS/releases/tag/v1.5
 [1.4]: https://github.com/Daniel-Parke/PatterOS/releases/tag/v1.4

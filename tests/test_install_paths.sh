@@ -9,11 +9,11 @@
 #  The installer runs completely unmodified. Only the outside world is faked,
 #  by putting stubs ahead of the real commands on PATH (see harness/stubs.sh).
 #  So the branching, the service files and the decisions are all real; the
-#  driver installs, the compile and the 26 GB of downloads are not.
+#  driver installs, the compile and the 64 GB of downloads are not.
 #
 #  This exists because the interesting paths are the ones nobody can safely
-#  test for real: a mismatched NVIDIA driver, an 8 GB card asked to hold a
-#  19 GB model, SSH on a non-standard port, Resizable BAR switched off.
+#  test for real: a mismatched NVIDIA driver, an 8 GB card asked to hold an
+#  18 GB model, SSH on a non-standard port, Resizable BAR switched off.
 # =============================================================================
 set -uo pipefail
 
@@ -206,13 +206,54 @@ hasnt "${UNIT}" "-ngl 999" "does not assume the whole model fits"
 has "${UNIT}" "GGML_VK_DISABLE_HOST_VISIBLE_VIDMEM=1" "ReBAR workaround still applies"
 
 # ---------------------------------------------------------------------------
-# 10. Not enough disk. Must refuse BEFORE downloading anything.
+# 10. Not enough disk. Must refuse before ANYTHING on the machine has changed.
+#
+# "Before downloading" was too weak a promise. The check used to live in phase
+# 4, so a tier that could never fit still cost you a full system upgrade, a
+# driver install and a twenty-minute engine build before anyone mentioned the
+# disk. The three `hasnt` lines below are the ones that hold it in phase 0.
 # ---------------------------------------------------------------------------
 STUB_GPU=nvidia STUB_NVIDIA=ok STUB_VRAM_MB=24576 STUB_DISK_GB=4 \
   run_case "only 4 GB free, express tier" --no-odysseus --skip-firewall
 if [[ ${RC} -ne 0 ]]; then ok "refuses to continue"; else bad "refuses to continue" "exit ${RC}"; fi
 has "${OUT}" "Not enough disk space" "explains it is a disk problem"
 hasnt "${SANDBOX}/calls.log" "hf download" "stops BEFORE downloading anything"
+hasnt "${SANDBOX}/calls.log" "^apt-get upgrade" "stops BEFORE upgrading the system"
+hasnt "${SANDBOX}/calls.log" "^ubuntu-drivers"  "stops BEFORE touching the driver"
+hasnt "${SANDBOX}/calls.log" "^cmake"           "stops BEFORE building the engine"
+
+# ---------------------------------------------------------------------------
+# 10b. The same refusal for --full, which is the tier that actually needs it.
+# There was no --full disk case at all: case 10 only ever exercised the express
+# total, and --full is four times the size. 40 GB fits express and not full.
+# ---------------------------------------------------------------------------
+STUB_GPU=nvidia STUB_NVIDIA=ok STUB_VRAM_MB=24576 STUB_DISK_GB=40 \
+  run_case "40 GB free, --full tier" --full --no-odysseus --skip-firewall
+if [[ ${RC} -ne 0 ]]; then ok "refuses the full tier"; else bad "refuses the full tier" "exit ${RC}"; fi
+has "${OUT}" "Not enough disk space for the 'full' model set" "names the tier that does not fit"
+has "${OUT}" "It needs about 64 GB" "quotes the real full-tier total"
+hasnt "${SANDBOX}/calls.log" "hf download" "downloads nothing"
+hasnt "${SANDBOX}/calls.log" "^cmake"    "does not build first"
+
+# ---------------------------------------------------------------------------
+# 10c. The other half of the guarantee. A check that now runs before anything
+# is installed must not refuse a machine that does have room.
+# ---------------------------------------------------------------------------
+STUB_GPU=nvidia STUB_NVIDIA=ok STUB_VRAM_MB=24576 STUB_DISK_GB=70 \
+  run_case "70 GB free, --full tier" --full --no-odysseus --skip-firewall
+completes
+hasnt "${OUT}" "Not enough disk space" "does not refuse a disk that fits"
+
+# ---------------------------------------------------------------------------
+# 10d. --no-models must never be refused for models it was told not to fetch.
+# This is the combination the earlier disk check makes dangerous: reaching for
+# --no-models is exactly what someone short of disk would do.
+# ---------------------------------------------------------------------------
+STUB_GPU=nvidia STUB_NVIDIA=ok STUB_VRAM_MB=24576 STUB_DISK_GB=1 \
+  run_case "1 GB free, --no-models" --no-models --no-odysseus --skip-firewall
+completes
+hasnt "${OUT}" "Not enough disk space" "no disk check when nothing is downloaded"
+hasnt "${SANDBOX}/calls.log" "hf download" "downloads nothing"
 
 # ---------------------------------------------------------------------------
 # 11. Models actually download, and the QAT repos are the ones requested.

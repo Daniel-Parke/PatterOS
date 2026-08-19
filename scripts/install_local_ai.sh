@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  PatterOS · Local AI Budget Build · Part 2 companion installer
-#  install_local_ai.sh  (v1.4)
+#  install_local_ai.sh  (v1.5)
 #
 #  Automates EXACTLY what the Manual Setup Guide does, for people who would
 #  rather run a script than type the steps by hand:
@@ -25,7 +25,7 @@
 #     sudo bash install_local_ai.sh -y   # no prompts (express models)
 #
 #  FLAGS
-#     --full           Also download bigger models (needs a 24 GB card + disk).
+#     --full           Also download bigger models (24 GB card, ~70 GB free disk).
 #     --no-models      Don't download anything (you'll add models later).
 #     --no-odysseus    Inference server only; skip the Odysseus workspace.
 #     --cpu            Force CPU-only (ignore any GPU).
@@ -117,15 +117,22 @@ ODY_COMMIT="${ODY_COMMIT:-cf4e240ad1622da6a904f496b19d656a2b9c6393}"
 # not, and q4 is what makes these fit on a real budget card. We never download
 # full-precision weights.
 #
-# These are the QAT (quantisation-aware training) builds. Google trains these
-# with the quantisation in mind rather than compressing afterwards, and they are
-# 0.6 to 1.6 GB smaller per model than the standard builds at the same
-# UD-Q4_K_XL level, which matters on the 512 GB drive in the Part 1 build. They
-# are also the builds used for this project's own comparison tests.
-# Every repo below was checked on 15 August 2026: all four resolve, all are
-# Apache 2.0 and ungated, and each contains exactly ONE file matching the glob.
+# Gemma entries are the QAT (quantisation-aware training) builds. Google trains
+# these with the quantisation in mind rather than compressing afterwards, and
+# they are 0.6 to 1.6 GB smaller per model than the standard builds at the same
+# UD-Q4_K_XL level, which matters on the 512 GB drive in the Part 1 build.
+#
+# Qwen 3.8 27B entries are the Unsloth UD-Q4_K_XL and AtomicChat AD-Q4_K_M
+# builds. Both are q4-class dense 27B files for 24 GB cards. A smaller
+# AD-IQ3_XXS exists for 16 GB cards; it is documented in the guide and is not
+# downloaded here (this list stays q4-only).
+# Every repo below was checked on 18 August 2026: all six resolve, all are
+# ungated, and each contains exactly ONE file matching the glob. Gemma and
+# Unsloth Qwen3.8 cards are Apache 2.0. AtomicChat did not stamp a licence
+# field; it is an ungated quant of Apache 2.0 Qwen/Qwen3.8-27B.
 # Watch the casing: E2B and E4B are capitals, and 12B and 31B are capital B in
-# the QAT repos (the non-QAT 12b repo uses a lowercase b).
+# the QAT repos (the non-QAT 12b repo uses a lowercase b). Qwen3.8 uses a
+# dotted 3.8 in both the repo and the filename.
 EXPRESS_MODELS=(
   "unsloth/gemma-4-E2B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|2.7"    # tiny, runs anywhere
   "unsloth/gemma-4-E4B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|4.3"    # small but capable
@@ -133,6 +140,8 @@ EXPRESS_MODELS=(
 FULL_MODELS=(
   "unsloth/gemma-4-12B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|6.8"    # strong mid-size all-rounder
   "unsloth/gemma-4-31B-it-qat-GGUF|*UD-Q4_K_XL*.gguf|17.3"   # top quality on a 24 GB card
+  "unsloth/Qwen3.8-27B-GGUF|*UD-Q4_K_XL*.gguf|16.7"          # Qwen 3.8 Unsloth UD Q4
+  "AtomicChat/Qwen3.8-27B-GGUF|*AD-Q4_K_M*.gguf|15.9"        # Qwen 3.8 AtomicChat AD Q4
 )
 
 # ----- args -----------------------------------------------------------------
@@ -146,7 +155,10 @@ WANT_LACT="ask"      # ask = yes on GPU rigs unless changed at the menu
 show_help(){ sed -n '2,/^# --- end of help/p' "$0" | sed '$d; s/^# \{0,1\}//'; }
 while [[ $# -gt 0 ]]; do case "$1" in
   --full)        TIER="full";;
-  --no-models)   WANT_MODELS="no";;
+  # Set the tier too, not just the flag. recompute_models() decides from TIER,
+  # and its fallback arm sets WANT_MODELS back to "yes", so a bare flag was
+  # overwritten before it was ever read and the express set downloaded anyway.
+  --no-models)   WANT_MODELS="no"; TIER="none";;
   --no-odysseus) WANT_ODY="no";;
   --cpu)         FORCE_CPU="yes";;
   --skip-upgrade)  SKIP_UPGRADE="yes";;
@@ -183,7 +195,7 @@ ODY_DIR="${USER_HOME}/odysseus"
 echo -e "${C}${B}"
 echo "  ============================================================"
 echo "     PatterOS  ·  Local AI Budget Build"
-echo "     Part 2 companion installer  ·  v1.4"
+echo "     Part 2 companion installer  ·  v1.5"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo
@@ -479,22 +491,38 @@ models_largest_gb(){
   awk -v s="${max}" 'BEGIN{printf "%d", (s==int(s)?s:int(s)+1)}'
 }
 
-# Tell the user BEFORE downloading tens of gigabytes whether this will fit.
-# Refuses on disk (a hard failure), warns on VRAM (partial offload still works,
-# it is just slower, and 1 token/s beats 0).
-preflight_models(){
+# Two questions, asked at two different moments, so two functions.
+#
+# Disk can be asked before the install starts, and must be: a tier that could
+# never fit used to cost you a system upgrade, a driver install and a full
+# engine build before anyone mentioned it. It is asked again before the
+# download, because the build in between consumes disk of its own.
+#
+# VRAM cannot be asked that early. On a fresh machine nothing has been
+# installed yet: nvidia-smi arrives with the driver in phase 2, mesa-utils is
+# never installed at all, and the sysfs fallback is an amdgpu node. vram_gb()
+# would return nothing and the warning would silently stop happening, which no
+# stub can catch because the stubs always answer.
+#
+# Neither refuses on VRAM. A model bigger than the card still runs, just partly
+# from system memory, and 1 token/s beats 0.
+preflight_disk(){
   (( ${#MODEL_SET[@]} > 0 )) || return 0
-  local need free vram largest
-  need="$(models_total_gb)"; largest="$(models_largest_gb)"
-  free="$(free_gb "${USER_HOME}")"; vram="$(vram_gb)"
+  local need free
+  need="$(models_total_gb)"; free="$(free_gb "${USER_HOME}")"
+  [[ -n "${free}" ]] || return 0
+  (( free >= need + 5 )) && return 0
+  warn "Not enough disk space for the '${TIER}' model set."
+  info "It needs about ${need} GB, plus a few GB of headroom. You have ${free} GB free in ${USER_HOME}."
+  info "Options: choose the 'express' tier, free up some space, or re-run with --no-models"
+  info "and add models later into ${MODELS_DIR}."
+  return 1
+}
 
-  if [[ -n "${free}" ]] && (( free < need + 5 )); then
-    warn "Not enough disk space for the '${TIER}' model set."
-    info "It needs about ${need} GB, plus a few GB of headroom. You have ${free} GB free in ${USER_HOME}."
-    info "Options: choose the 'express' tier, free up some space, or re-run with --no-models"
-    info "and add models later into ${MODELS_DIR}."
-    die "Stopping before anything was downloaded."
-  fi
+preflight_vram(){
+  (( ${#MODEL_SET[@]} > 0 )) || return 0
+  local vram largest
+  largest="$(models_largest_gb)"; vram="$(vram_gb)"
 
   if [[ -n "${vram}" ]] && (( largest > vram )); then
     warn "The biggest model in the '${TIER}' set is about ${largest} GB, and your graphics card has ${vram} GB."
@@ -688,7 +716,10 @@ if [[ "${YES}" != "yes" ]]; then
     echo "  [Enter] run with this plan    [c] customise values    [s] skip phases    [q] quit"
     read -r -p "  Your choice: " choice </dev/tty || true
     case "${choice,,}" in
-      "") break;;
+      # Check the disk while the menu that can fix it is still open, rather
+      # than refusing after it has closed and telling you to pick another tier.
+      "") if preflight_disk; then break; fi
+          info "Press 'c' for a smaller model tier, 's' to skip the download, or 'q' to quit.";;
       q|quit) die "Cancelled. Nothing changed.";;
       c) customise; show_plan;;
       s)
@@ -710,6 +741,10 @@ if [[ "${YES}" != "yes" ]]; then
     esac
   done
 fi
+
+# Under -y the menu above never ran, so this is the first and only chance to
+# refuse before the upgrade, the drivers and the build have changed anything.
+preflight_disk || die "Stopping before anything on this machine was changed."
 
 # ======================================================================== 1 ==
 step "1/9  System packages"
@@ -1035,7 +1070,7 @@ MODELS_MAX=1
 
 # GPU offload. 999 means "put the whole model on the card". That is right when
 # the model fits and wrong when it does not: the budget build in Part 1 pairs
-# an 8 GB card with a --full tier whose largest model is ~19 GB, which would
+# an 8 GB card with a --full tier whose largest model is ~18 GB, which would
 # simply run out of memory. So when we can see both numbers and the model is
 # bigger than the card, offload a proportion of the layers instead and let the
 # rest run from system RAM. Slower, but it runs, and 1 token/s beats 0.
@@ -1067,7 +1102,10 @@ fi
 step "4/9  Downloading models into ${MODELS_DIR}"
 as_user mkdir -p "${MODELS_DIR}"
 if (( ${#MODEL_SET[@]} > 0 )); then
-  preflight_models
+  # Asked again, because the engine build since the plan has taken disk of its
+  # own, and this is the number that decides whether the download completes.
+  preflight_disk || die "Stopping before anything was downloaded."
+  preflight_vram
   # --no-warn-script-location silences three paragraphs of pip warnings about
   # ~/.local/bin not being on PATH. They are alarming to read, they arrive right
   # after the longest wait so far, and they describe something this script

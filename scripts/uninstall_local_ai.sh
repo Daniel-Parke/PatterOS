@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 #  PatterOS · Local AI Budget Build, Part 2 uninstaller / reset
-#  uninstall_local_ai.sh  (v1.4)
+#  uninstall_local_ai.sh  (v1.5)
 #
 #  The exact inverse of install_local_ai.sh. Use it to wipe a rig back to a
 #  clean state between test runs, so a fresh `install_local_ai.sh` starts clean.
@@ -193,7 +193,7 @@ safe_rm(){
 echo -e "${C}${B}"
 echo "  ============================================================"
 echo "     PatterOS  ·  Local AI Budget Build"
-echo "     Part 2 uninstaller / reset  ·  v1.4"
+echo "     Part 2 uninstaller / reset  ·  v1.5"
 echo "  ============================================================"
 echo -e "     Your hardware. Your data. Your control.${N}"
 echo
@@ -262,9 +262,10 @@ step "3  Removing Odysseus (clone + venv)"
 # Everything Odysseus persists lives in one directory: src/constants.py derives
 # DATA_DIR and every notes, uploads, chat-history and settings path from it. That
 # directory sits inside the clone, so deleting the clone deleted the lot. The
-# asymmetry gave it away, ~/models is 174 GB of re-downloadable files and is kept
-# by default, while a folder of things that exist nowhere else was not. It is
-# moved out of the way instead, and only deleted if asked for by name.
+# asymmetry gave it away, ~/models is tens or hundreds of GB of files anyone
+# can download again and is kept by default, while a folder of things that
+# exist nowhere else was not. It is moved out of the way instead, and only
+# deleted if asked for by name.
 ODY_DATA="${ODY_DIR}/data"
 ODY_DATA_SAVED=""
 ODY_GONE="no"

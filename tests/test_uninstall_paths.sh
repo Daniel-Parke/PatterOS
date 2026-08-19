@@ -382,10 +382,10 @@ hasnt "${OUT}" "Removed the LAN rule" "does not claim a removal that did not hap
 # The user's own work in Odysseus: notes, uploads, settings and chat history.
 #
 # All of it lives in one directory inside the clone, so "delete ~/odysseus" took
-# the lot. The asymmetry is what gave it away: ~/models is kept by default and is
-# 174 GB of files anyone can download again, while this is the one thing on the
-# machine that exists nowhere else. A default reset is supposed to be the safe
-# option, so it now moves that folder aside instead.
+# the lot. The asymmetry is what gave it away: ~/models is kept by default and
+# is hundreds of GB of files anyone can download again, while this is the one
+# thing on the machine that exists nowhere else. A default reset is supposed to
+# be the safe option, so it now moves that folder aside instead.
 # ---------------------------------------------------------------------------
 run_case "default reset keeps your Odysseus content" -y
 exits 0

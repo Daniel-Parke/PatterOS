@@ -296,7 +296,7 @@ Learn next. NPU runtimes as laptop and phone deployment targets, power budgeting
 
 ### 22. The model table
 
-> Snapshot warning: June 2026
+> Snapshot warning: August 2026
 > This table is the perishable part of the book. It's accurate as I write and will age like milk, so treat it as a worked example of chapter 9's method, not as scripture. The columns are the lesson; the rows are this season's weather.
 
 Text models you can actually run
@@ -309,7 +309,8 @@ Memory figures are the roughly-4-bit files you'd realistically download. Ratings
 | Gemma 4 12B | Mid dense multimodal, 256K context | 7 GB (QAT) | 8 GB card (offload) to 24 GB | 4.5/5. The do-everything daily driver for the budget rig. Star of this series for a reason. |
 | Gemma 4 26B-A4B | MoE: 26B pool, 4B active | 15 GB | 24 GB cards; great on CPU offload | 4/5. Near-31B quality at small-model speed. The MoE lesson made flesh. |
 | Gemma 4 31B | The dense flagship of the family | 18 GB (QAT) | 24 GB cards | 4.5/5. Top quality that fits the Part 1 flagship rigs. Reports, reasoning, long documents. |
-| Qwen3.6 27B-class | Dense all-rounder, strong code and 100+ languages | ~16 GB | 24 GB cards | 4.5/5. The community's other default answer. Excellent tool calling; superb coder variants. |
+| Qwen3.8 27B | Dense all-rounder, Unsloth UD-Q4 or AtomicChat AD-Q4 | ~16 GB | 24 GB cards | 4.5/5. The current Qwen 27B pick. Ships on `--full`. On 16 GB cards use AtomicChat AD-IQ3_XXS (~11 GB), not the Q4s. |
+| Qwen3.6 27B-class | Previous 27B dense Qwen, still a strong coder | ~16 GB | 24 GB cards | 4/5. Superseded by 3.8, which is the one the installer fetches. Still worth running if you already have the file. |
 | Qwen3.6 35B-A3B | MoE with vision, ~262K context | ~20 GB | 24 GB and unified boxes | 4/5. Agentic and coding workhorse with tiny active size; flies where bandwidth is scarce. |
 | Phi-4-mini | 3.8B with a 128K context | ~2.5 GB | CPU-only machines, laptops, edge | 3.5/5. The no-GPU entry point. Long documents on modest hardware. |
 | Mistral Small 4 | Efficient European mid-size, Apache 2.0 | ~14 GB | 24 GB cards | 4/5. Clean licence, strong general quality, business-friendly deployments. |

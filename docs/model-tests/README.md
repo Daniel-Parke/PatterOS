@@ -51,13 +51,19 @@ Checked against first-party sources on 15 August 2026:
   Quantisation choice for this architecture is limited, so a poor result here
   may say more about the conversion than the model. The 4B version, which NVIDIA
   publishes as an official GGUF, is a different and much happier story.
-- **Note the licence differences.** Gemma 4 is Apache 2.0. Qwen3.6 is Apache
-  2.0. The NVIDIA Nemotron Open Model License is permissive and allows
-  commercial use, but it is a bespoke licence with an attribution requirement
-  and an indemnity clause, not Apache.
-- **Only Gemma 4 ships in the installer.** The others were run for comparison.
-  If you want to try them, drop the GGUF into `~/models` and run
-  `curl 'http://localhost:8020/v1/models?reload=1'`.
+- **Note the licence differences.** Gemma 4 is Apache 2.0, and so is Qwen3.6.
+  The NVIDIA Nemotron Open Model License is permissive and allows commercial
+  use, but it is a bespoke licence with an attribution requirement and an
+  indemnity clause, not Apache. Qwen 3.8 needs a sentence of its own, checked
+  18 August 2026: Unsloth's build states Apache 2.0 on its model card, and
+  AtomicChat's states no licence at all. AtomicChat's is a quantisation of
+  Apache 2.0 Qwen/Qwen3.8-27B, so the grant should carry through, but we have
+  not confirmed that from the publisher and would rather say so.
+- **The installer fetches Gemma 4 QAT, and on `--full` the two Qwen 3.8 27B Q4
+  builds as well.** Only the E2B and E4B come down by default; the 12B, the 31B
+  and both Qwens are all `--full`. The hydrogen runs above still use Qwen3.6.
+  If you want to try a file the installer does not fetch, drop the GGUF into
+  `~/models` and run `curl 'http://localhost:8020/v1/models?reload=1'`.
 - **A bigger model is not automatically a better answer**, and a lower
   quantisation of a bigger model is not automatically better than a higher
   quantisation of a smaller one. That trade-off is most of what these files are
